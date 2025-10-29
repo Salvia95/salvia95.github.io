@@ -11,12 +11,14 @@
   "cmdr",
   "obsidian-shellcommands",
   "obsidian-git",
-  "alias-file-name-history",
   "property-over-file-name",
   "iconic",
   "new-tab-default-page",
   "homepage",
-  "astro-composer",
   "obsidian-prozen",
-  "seo"
+  "seo",
+  "astro-composer",
+  "alias-file-name-history",
+  "astro-modular-settings",
+  "editing-toolbar"
 ]

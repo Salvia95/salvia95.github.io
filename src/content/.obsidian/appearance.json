@@ -3,6 +3,7 @@
   "showViewHeader": true,
   "showRibbon": false,
   "enabledCssSnippets": [
-    "astro-modular-styling"
+    "astro-modular-styling",
+    "mermaid"
   ]
 }

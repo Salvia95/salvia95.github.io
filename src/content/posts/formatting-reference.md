@@ -249,7 +249,7 @@ For example: [[getting-started|Getting Started]] or [Astro Suite Vault (Modular)
 
 Here's an internal link with an anchor: [[sample-folder-based-post/index#Benefits of Folder-Based Approach|Benefits of Folder-Based Approach]]
 
-Here's a relative link: [Mermaid Diagram Test](mermaid-diagrams.md) 
+Here's a relative link: [Mermaid Diagram Test](spring-oracle-mybatis.md) 
 ### Reference Links
 
 This is a [reference link][1] and this is another [reference link][markdown].

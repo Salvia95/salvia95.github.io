@@ -311,11 +311,11 @@ export const siteConfig: SiteConfig = {
     showMobileMenu: true,
     // [CONFIG:NAVIGATION_PAGES]
     pages: [
-      { title: "Posts", url: "/posts" },
-      { title: "Projects", url: "/projects" },
-      { title: "Docs", url: "/docs" },
-      { title: "About", url: "/about" },
-      { title: "GitHub", url: "https://github.com/davidvkimball/astro-modular" },
+      { title: "글", url: "/posts" },
+      { title: "프로젝트", url: "/projects" },
+      { title: "문서", url: "/docs" },
+      { title: "소개", url: "/about" },
+      { title: "Notion", url: "https://github.com/davidvkimball/astro-modular" },
     ],
     // [CONFIG:NAVIGATION_SOCIAL]
     social: [
