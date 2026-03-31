@@ -1030,6 +1030,15 @@ const scrollbarClass = siteConfig.hideScrollBar ? '' : 'show-scrollbars';
   <!-- Twitter Widgets Script -->
   <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
 
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-D9HJWLBEV7"></script>
+  <script is:inline>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-D9HJWLBEV7');
+  </script>
+
 </head>
 
 <body class={`min-h-screen bg-white dark:bg-primary-950 text-primary-900 dark:text-primary-50 text-selection-highlight transition-colors duration-200 ${scrollbarClass} ${bodyClass}`}>
