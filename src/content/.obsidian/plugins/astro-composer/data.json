@@ -1,25 +1,17 @@
 {
-  "enableUnderscorePrefix": false,
   "defaultTemplate": "---\ntitle: \"{{title}}\"\ndate: {{date}}\ndescription: \"\"\ntags: []\nimage: \"\"\nimageAlt: \"\"\nimageOG: false\nhideCoverImage: false\nhideTOC: false\ntargetKeyword: \"\"\ndraft: true\n---",
-  "postsFolder": "posts",
-  "postsLinkBasePath": "/blog/",
-  "automatePostCreation": true,
   "autoInsertProperties": true,
-  "creationMode": "file",
-  "indexFileName": "index",
   "dateFormat": "YYYY-MM-DD",
-  "excludedDirectories": "special",
-  "onlyAutomateInPostsFolder": false,
-  "enablePages": true,
-  "pagesFolder": "pages",
-  "pagesLinkBasePath": "",
-  "pagesCreationMode": "file",
-  "pagesIndexFileName": "",
-  "pageTemplate": "---\ntitle: \"{{title}}\"\ndescription: \"\"\nnoIndex: false\nhideTOC: false\n---\n",
   "enableCopyHeadingLink": true,
   "copyHeadingLinkFormat": "obsidian",
   "addTrailingSlashToLinks": false,
-  "customContentTypes": [
+  "enableOpenTerminalCommand": false,
+  "terminalProjectRootPath": "",
+  "enableTerminalRibbonIcon": false,
+  "enableOpenConfigFileCommand": false,
+  "configFilePath": "",
+  "enableConfigRibbonIcon": false,
+  "contentTypes": [
     {
       "id": "custom-1758090445018",
       "name": "Projects",
@@ -37,8 +29,38 @@
       "enabled": true,
       "linkBasePath": "/docs/",
       "creationMode": "file"
+    },
+    {
+      "id": "posts-1765541618135",
+      "name": "Posts",
+      "folder": "posts",
+      "linkBasePath": "/blog/",
+      "template": "---\ntitle: \"{{title}}\"\ndate: {{date}}\ndescription: \"\"\ntags: []\nimage: \"\"\nimageAlt: \"\"\nimageOG: false\nhideCoverImage: false\nhideTOC: false\ntargetKeyword: \"\"\ndraft: true\n---",
+      "enabled": true,
+      "creationMode": "file",
+      "indexFileName": "index",
+      "ignoreSubfolders": false,
+      "enableUnderscorePrefix": false
+    },
+    {
+      "id": "pages-1765541618135",
+      "name": "Pages",
+      "folder": "pages",
+      "linkBasePath": "",
+      "template": "---\ntitle: \"{{title}}\"\ndescription: \"\"\nnoIndex: false\nhideTOC: false\n---\n",
+      "enabled": true,
+      "creationMode": "file",
+      "indexFileName": "",
+      "ignoreSubfolders": false,
+      "enableUnderscorePrefix": false
     }
   ],
+  "migrationCompleted": true,
+  "helpButtonReplacement": {
+    "enabled": false,
+    "commandId": "edit-astro-config",
+    "iconId": "wrench"
+  },
   "linkBasePath": "/posts/",
   "enableAutoRename": true,
   "enableAutoInsertFrontmatter": true,
