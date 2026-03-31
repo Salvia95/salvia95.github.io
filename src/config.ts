@@ -315,7 +315,6 @@ export const siteConfig: SiteConfig = {
       { title: "프로젝트", url: "/projects" },
       { title: "문서", url: "/docs" },
       { title: "소개", url: "/about" },
-      { title: "Notion", url: "https://github.com/davidvkimball/astro-modular" },
     ],
     // [CONFIG:NAVIGATION_SOCIAL]
     social: [
