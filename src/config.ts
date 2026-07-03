@@ -226,7 +226,7 @@ export const siteConfig: SiteConfig = {
     // [CONFIG:FOOTER_ENABLED]
     enabled: true,
     // [CONFIG:FOOTER_CONTENT]
-    content: `© 2025 {author}. Built with the <a href="https://github.com/davidvkimball/astro-modular" target="_blank">Astro Modular</a> theme.`,
+    content: `© 2025 {author}`,
     // [CONFIG:FOOTER_SHOW_SOCIAL_ICONS]
     showSocialIconsInFooter: true,
   },
@@ -238,7 +238,7 @@ export const siteConfig: SiteConfig = {
   featureButton: "mode", // "mode" | "graph" | "theme" | "none"
   seo: {
     // [CONFIG:SEO_DEFAULT_OG_IMAGE_ALT]
-    defaultOgImageAlt: "Astro Modular logo.", // Alt text for the default Open Graph image, public/open-graph.png
+    defaultOgImageAlt: "New Branch! - Junghoon's Life & Tech stories", // Alt text for the default Open Graph image, public/open-graph.png
   },
   deployment: {
     // [CONFIG:DEPLOYMENT_PLATFORM]
@@ -319,13 +319,8 @@ export const siteConfig: SiteConfig = {
     // [CONFIG:NAVIGATION_SOCIAL]
     social: [
       {
-        title: "X",
-        url: "https://x.com/davidvkimball",
-        icon: "x-twitter",
-      },
-      {
         title: "GitHub",
-        url: "https://github.com/davidvkimball",
+        url: "https://github.com/salvia95",
         icon: "github",
       },
     ],
@@ -347,7 +342,7 @@ export const siteConfig: SiteConfig = {
       // [CONFIG:HOME_OPTIONS_FEATURED_POST_TYPE]
       type: "latest", // "latest" or "featured"
       // [CONFIG:HOME_OPTIONS_FEATURED_POST_SLUG]
-      slug: "getting-started", // Slug of post after '/posts/' to be featured (e.g. "post-title"). Only used when type is "featured"
+      slug: "batch-etl-improvement", // Slug of post after '/posts/' to be featured (e.g. "post-title"). Only used when type is "featured"
     },
     recentPosts: {
       // [CONFIG:HOME_OPTIONS_RECENT_POSTS_ENABLED]
@@ -413,13 +408,13 @@ export const siteConfig: SiteConfig = {
       // [CONFIG:POST_OPTIONS_COMMENTS_PROVIDER]
       provider: "giscus",
       // [CONFIG:POST_OPTIONS_COMMENTS_REPO]
-      repo: "davidvkimball/astro-modular",
+      repo: "", // Set to "your-username/your-repo" when enabling Giscus comments
       // [CONFIG:POST_OPTIONS_COMMENTS_REPO_ID]
-      repoId: "R_kgDOPllfKw",
+      repoId: "", // Get from https://giscus.app after enabling GitHub Discussions
       // [CONFIG:POST_OPTIONS_COMMENTS_CATEGORY]
       category: "General",
       // [CONFIG:POST_OPTIONS_COMMENTS_CATEGORY_ID]
-      categoryId: "DIC_kwDOPllfK84CvUpx",
+      categoryId: "", // Get from https://giscus.app
       // [CONFIG:POST_OPTIONS_COMMENTS_MAPPING]
       mapping: "pathname",
       // [CONFIG:POST_OPTIONS_COMMENTS_STRICT]
@@ -433,7 +428,7 @@ export const siteConfig: SiteConfig = {
       // [CONFIG:POST_OPTIONS_COMMENTS_THEME]
       theme: "preferred_color_scheme",
       // [CONFIG:POST_OPTIONS_COMMENTS_LANG]
-      lang: "en",
+      lang: "ko",
       // [CONFIG:POST_OPTIONS_COMMENTS_LOADING]
       loading: "lazy",
     },
