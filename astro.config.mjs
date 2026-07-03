@@ -144,7 +144,9 @@ export default defineConfig({
     optimizeDeps: {
       exclude: ['astro:content']
     },
-    exclude: ['**/_redirects']
+    // Treat these deployment-platform passthrough files as raw static assets so
+    // Vite never tries to parse their contents as JavaScript during the build.
+    assetsInclude: ['**/_headers', '**/_redirects']
   },
   build: {
     assets: '_assets'
