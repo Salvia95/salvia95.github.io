@@ -1,6 +1,6 @@
 ---
-title: Documentation
-description: Comprehensive guides, tutorials, and reference materials to help you get the most out of this project.
+title: 문서
+description: 정리한 가이드와 참고 자료를 모아둔 공간입니다.
 hideTOC: false
 ---
-Find everything you need to understand, use, and contribute to this project. 
+정리한 가이드와 참고 자료를 이곳에서 확인하실 수 있습니다.

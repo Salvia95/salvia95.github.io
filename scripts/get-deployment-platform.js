@@ -12,9 +12,13 @@ function getDeploymentPlatform() {
   try {
     const configPath = join(process.cwd(), 'src', 'config.ts');
     const configContent = readFileSync(configPath, 'utf8');
-    
+
+    // Only search after the siteConfig object starts, to avoid matching the
+    // "platform" union type in the SiteConfig TypeScript interface above it.
+    const configBody = configContent.split('export const siteConfig')[1] || configContent;
+
     // Extract platform from config
-    const platformMatch = configContent.match(/platform:\s*["']([^"']+)["']/);
+    const platformMatch = configBody.match(/platform:\s*["']([^"']+)["']/);
     
     if (platformMatch) {
       return platformMatch[1];

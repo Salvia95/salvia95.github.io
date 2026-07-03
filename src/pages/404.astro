@@ -17,8 +17,8 @@ try {
 
 // SEO data for 404 page
 const seoData = {
-  title: `Page Not Found | ${siteConfig.title}`,
-  description: 'The page you are looking for could not be found.',
+  title: `페이지를 찾을 수 없습니다 | ${siteConfig.title}`,
+  description: '요청하신 페이지를 찾을 수 없습니다.',
   canonical: Astro.url.href,
   ogType: 'website' as const
 };
@@ -41,9 +41,9 @@ Astro.response.status = 404;
       </h1>
       
       <h2 class="font-semibold text-primary-700 dark:text-primary-300 mb-6">
-        Page Not Found
+        페이지를 찾을 수 없습니다
       </h2>
-      
+
       {pageContent ? (
         <!-- Custom 404 content -->
         <div class="prose prose-sm dark:prose-dark mx-auto mb-8">
@@ -53,10 +53,10 @@ Astro.response.status = 404;
         <!-- Default 404 content -->
         <div class="mb-8">
           <p class="text-lg text-primary-600 dark:text-primary-300 mb-4">
-            Sorry, we couldn't find the page you're looking for. The page may have been moved, deleted, or the URL might be incorrect.
+            찾으시는 페이지를 찾을 수 없습니다. 페이지가 이동되었거나 삭제되었을 수 있습니다.
           </p>
           <p class="text-primary-500 dark:text-primary-400">
-            Don't worry though, there's plenty of other content to explore!
+            대신 다른 글들을 둘러보세요!
           </p>
         </div>
       )}

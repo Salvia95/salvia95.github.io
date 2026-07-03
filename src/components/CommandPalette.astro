@@ -24,7 +24,7 @@ import Icon from './Icon.astro';
       <!-- Header -->
       <div class="flex items-center justify-between p-4 border-b border-primary-200 dark:border-primary-700">
         <h2 id="command-palette-title" class="text-lg font-semibold text-primary-900 dark:text-primary-50">
-          Command Palette
+          커맨드 팔레트
         </h2>
         <button 
           id="command-palette-close"
@@ -62,7 +62,7 @@ import Icon from './Icon.astro';
         <!-- Loading state -->
         <div id="command-palette-loading" class="hidden p-4 text-center">
           <div class="inline-flex items-center justify-center space-x-2 text-primary-500 dark:text-primary-400">
-            <span>Searching...</span>
+            <span>검색 중...</span>
             <div class="animate-spin rounded-full h-4 w-4 border-2 border-primary-300 dark:border-primary-600 border-t-highlight-500"></div>
           </div>
         </div>
@@ -70,8 +70,8 @@ import Icon from './Icon.astro';
         <!-- No results -->
         <div id="command-palette-no-results" class="hidden p-8 text-center">
           <Icon name="search-x" class="w-8 h-8 text-primary-400 dark:text-primary-500 mx-auto mb-2" />
-          <p class="text-primary-600 dark:text-primary-300">No results found</p>
-          <p class="text-sm text-primary-500 dark:text-primary-400 mt-1">Try a different search term</p>
+          <p class="text-primary-600 dark:text-primary-300">검색 결과가 없습니다</p>
+          <p class="text-sm text-primary-500 dark:text-primary-400 mt-1">다른 검색어를 입력해 보세요</p>
         </div>
 
         <!-- Default items (shown when no search) -->
@@ -83,35 +83,35 @@ import Icon from './Icon.astro';
             siteConfig.commandPalette.quickActions.changeTheme) && (
             <div class="p-2">
               <div class="px-3 py-2 text-xs font-medium text-primary-500 dark:text-primary-400 uppercase tracking-wide">
-                Quick Actions
+                빠른 실행
               </div>
               {siteConfig.commandPalette.quickActions.toggleMode && (
-                <button 
+                <button
                   data-action="toggle-theme"
                   class="w-full flex items-center space-x-3 px-3 py-2 text-left hover:bg-primary-50 dark:hover:bg-primary-800 rounded-lg transition-colors group"
                 >
                   <Icon name="sun-moon" class="w-4 h-4 text-primary-500 dark:text-primary-400 group-hover:text-highlight-500" />
-                  <span class="text-primary-900 dark:text-primary-50">Toggle Light/Dark Mode</span>
+                  <span class="text-primary-900 dark:text-primary-50">라이트/다크 모드 전환</span>
                 </button>
               )}
-              
+
               {siteConfig.commandPalette.quickActions.graphView && siteConfig.postOptions.graphView.enabled && (
-                <button 
+                <button
                   data-action="open-graph"
                   class="w-full flex items-center space-x-3 px-3 py-2 text-left hover:bg-primary-50 dark:hover:bg-primary-800 rounded-lg transition-colors group"
                 >
                   <Icon name="git-fork" class="w-4 h-4 text-primary-500 dark:text-primary-400 group-hover:text-highlight-500" />
-                  <span class="text-primary-900 dark:text-primary-50">Graph View</span>
+                  <span class="text-primary-900 dark:text-primary-50">그래프 보기</span>
                 </button>
               )}
-              
+
               {siteConfig.commandPalette.quickActions.changeTheme && (
-                <button 
+                <button
                   data-action="change-theme"
                   class="w-full flex items-center space-x-3 px-3 py-2 text-left hover:bg-primary-50 dark:hover:bg-primary-800 rounded-lg transition-colors group"
                 >
                   <Icon name="palette" class="w-4 h-4 text-primary-500 dark:text-primary-400 group-hover:text-highlight-500" />
-                  <span class="text-primary-900 dark:text-primary-50">Change Theme</span>
+                  <span class="text-primary-900 dark:text-primary-50">테마 변경</span>
                 </button>
               )}
             </div>
@@ -121,7 +121,7 @@ import Icon from './Icon.astro';
           {siteConfig.commandPalette.sections.pages && siteConfig.navigation.pages.length > 0 && (
             <div class="p-2">
               <div class="px-3 py-2 text-xs font-medium text-primary-500 dark:text-primary-400 uppercase tracking-wide">
-                Pages
+                페이지
               </div>
               {siteConfig.navigation.pages.map(page => (
                 <a 
@@ -143,7 +143,7 @@ import Icon from './Icon.astro';
           {siteConfig.commandPalette.sections.social && siteConfig.navigation.social.length > 0 && (
             <div class="p-2">
               <div class="px-3 py-2 text-xs font-medium text-primary-500 dark:text-primary-400 uppercase tracking-wide">
-                Social
+                소셜
               </div>
               {siteConfig.navigation.social.map(social => (
                 <a 
@@ -180,7 +180,7 @@ import Icon from './Icon.astro';
       <!-- Footer -->
       <div class="p-3 border-t border-primary-200 dark:border-primary-700 bg-primary-50 dark:bg-primary-800 rounded-b-xl">
         <div class="flex items-center justify-between text-xs text-primary-500 dark:text-primary-400">
-          <span>Use ↑↓ to navigate, ↵ to select, ESC to close</span>
+          <span>↑↓ 이동, ↵ 선택, ESC 닫기</span>
           <!-- <span>Press <kbd class="px-1 py-0.5 bg-white dark:bg-primary-700 rounded border">{siteConfig.commandPalette.shortcut.replace('ctrl', '⌘').replace('+', '').toUpperCase()}</kbd> to return</span> -->
         </div>
       </div>
@@ -833,10 +833,10 @@ import Icon from './Icon.astro';
           
           // Format section titles
           const sectionTitles = {
-            posts: 'Posts',
-            pages: 'Pages', 
-            projects: 'Projects',
-            docs: 'Documentation'
+            posts: '글',
+            pages: '페이지',
+            projects: '프로젝트',
+            docs: '문서'
           };
           
           header.textContent = `${sectionTitles[type as keyof typeof sectionTitles]} (${items.length})`;
@@ -1183,7 +1183,7 @@ import Icon from './Icon.astro';
     private populateThemeList() {
       // Check if theme switching is available before showing theme list
       if ((window as any).isThemeSwitchingAvailable && !(window as any).isThemeSwitchingAvailable()) {
-        this.themeList.innerHTML = '<div class="p-4 text-center text-primary-500 dark:text-primary-400">Theme switching is not available</div>';
+        this.themeList.innerHTML = '<div class="p-4 text-center text-primary-500 dark:text-primary-400">테마 변경을 사용할 수 없습니다</div>';
         return;
       }
 

@@ -90,8 +90,9 @@ const shouldShowCoverImage = (() => {
             
             // For folder-based posts, handle different image locations
             // In Astro v6, folder-based posts have IDs like 'folder-name' (not 'folder-name/index')
-            // We need to detect folder-based posts differently - check if the post has a folder structure
-            const isFolderBasedPost = post.id === 'sample-folder-based-post'; // TEMPORARY - need better detection
+            // Single-file posts store images under attachments/, so a path that doesn't
+            // start with 'attachments/' means the image is co-located in a post folder.
+            const isFolderBasedPost = !cleanImagePath.startsWith('attachments/');
             if (isFolderBasedPost && typeof cleanImagePath === 'string') {
               // If image is in subfolder (images/ or attachments/), remove the prefix
               if (cleanImagePath.startsWith('images/') || cleanImagePath.startsWith('attachments/')) {
@@ -115,17 +116,17 @@ const shouldShowCoverImage = (() => {
               return '';
             }
             
-            // 2. Check if this is a folder-based post by looking at the file path
-            // In Astro v6, folder-based posts have IDs like 'folder-name' (not 'folder-name/index')
-            const isFolderBasedPost = post.id === 'sample-folder-based-post'; // TEMPORARY - need better detection
-            
+            // 2. Check if this is a folder-based post by looking at the image path.
+            // In Astro v6, folder-based posts have IDs like 'folder-name' (not 'folder-name/index').
+            // Single-file posts store images under attachments/, so a path that doesn't
+            // start with 'attachments/' means the image is co-located in a post folder.
+            let cleanImagePath = image;
+            if (typeof cleanImagePath === 'string' && cleanImagePath.startsWith('[[') && cleanImagePath.endsWith(']]')) {
+              cleanImagePath = cleanImagePath.slice(2, -2);
+            }
+            const isFolderBasedPost = typeof cleanImagePath === 'string' && !cleanImagePath.startsWith('attachments/');
+
             if (isFolderBasedPost) {
-              // Remove Obsidian brackets to get the actual image path
-              let cleanImagePath = image;
-              if (typeof cleanImagePath === 'string' && cleanImagePath.startsWith('[[') && cleanImagePath.endsWith(']]')) {
-                cleanImagePath = cleanImagePath.slice(2, -2);
-              }
-              
               // For folder-based posts, check if image is in images/ or attachments/ subfolder
               if (typeof cleanImagePath === 'string' && (cleanImagePath.startsWith('images/') || cleanImagePath.startsWith('attachments/'))) {
                 // Sync script copies images to the root folder, so no subfolder in the URL

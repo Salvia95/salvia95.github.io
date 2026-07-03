@@ -226,7 +226,7 @@ export const siteConfig: SiteConfig = {
     // [CONFIG:FOOTER_ENABLED]
     enabled: true,
     // [CONFIG:FOOTER_CONTENT]
-    content: `© 2025 {author}`,
+    content: `© {year} {author}`,
     // [CONFIG:FOOTER_SHOW_SOCIAL_ICONS]
     showSocialIconsInFooter: true,
   },
@@ -252,7 +252,7 @@ export const siteConfig: SiteConfig = {
     // [CONFIG:COMMAND_PALETTE_SHORTCUT]
     shortcut: "ctrl+K",
     // [CONFIG:COMMAND_PALETTE_PLACEHOLDER]
-    placeholder: "Search posts",
+    placeholder: "글 검색",
     search: {
       // [CONFIG:COMMAND_PALETTE_SEARCH_POSTS]
       posts: true,

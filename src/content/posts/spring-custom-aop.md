@@ -10,7 +10,6 @@ draft: false
 hideTOC: false
 aliases:
 ---
-
 ## 들어가며
 
 `Spring Framework`를 래핑한 프레임워크를 사용하는데 `Spring AOP`, `AspectJ`의 사용이 불가하여 로깅과 권한 등의 관심사를 분리할 수 없는 상황에서는 어떻게 해야할까요?

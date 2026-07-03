@@ -152,12 +152,6 @@
   force = true
 
 [[redirects]]
-  from = "/about-us"
-  to = "/about"
-  status = 301
-  force = true
-
-[[redirects]]
   from = "/contact-me"
   to = "/contact"
   status = 301
@@ -172,54 +166,6 @@
 [[redirects]]
   from = "/privacy"
   to = "/privacy-policy"
-  status = 301
-  force = true
-
-[[redirects]]
-  from = "/posts/mermaid-test"
-  to = "/posts/mermaid-diagrams"
-  status = 301
-  force = true
-
-[[redirects]]
-  from = "/posts/mermaid-diagram-test"
-  to = "/posts/mermaid-diagrams"
-  status = 301
-  force = true
-
-[[redirects]]
-  from = "/posts/astro-suite-vault-modular-guide"
-  to = "/posts/obsidian-vault-guide"
-  status = 301
-  force = true
-
-[[redirects]]
-  from = "/posts/astro-suite-obsidian-vault-guide-astro-modular"
-  to = "/posts/obsidian-vault-guide"
-  status = 301
-  force = true
-
-[[redirects]]
-  from = "/projects/obsidian-astro-composer"
-  to = "/projects/astro-composer"
-  status = 301
-  force = true
-
-[[redirects]]
-  from = "/docs/api-reference"
-  to = "/docs/api"
-  status = 301
-  force = true
-
-[[redirects]]
-  from = "/docs/astro-modular-configuration"
-  to = "/docs/configuration"
-  status = 301
-  force = true
-
-[[redirects]]
-  from = "/docs/sourcetree-and-git"
-  to = "/docs/sourcetree-and-git-setup"
   status = 301
   force = true
 

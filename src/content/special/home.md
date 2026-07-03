@@ -1,7 +1,7 @@
 ---
 title: Homepage
-description: Welcome to the homepage
+description: New Branch! 홈페이지
 ---
-## Thanks for Reading
+## 읽어주셔서 감사합니다
 
-If you're looking for more, check out the [posts](/posts) page.
+더 많은 글이 궁금하시다면 [전체 글](/posts) 페이지를 확인해 주세요.

@@ -6,7 +6,6 @@ hideTOC: false
 aliases:
   - about-me
 ---
-
 ## 안녕하세요, 양정훈입니다.
 
 Java와 Spring 기반의 백엔드 시스템을 설계하고 운영하는 소프트웨어 엔지니어입니다.

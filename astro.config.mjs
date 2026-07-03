@@ -31,18 +31,9 @@ export default defineConfig({
   },
   redirects: {
   '/about-me': '/about',
-  '/about-us': '/about',
   '/contact-me': '/contact',
   '/contact-us': '/contact',
-  '/privacy': '/privacy-policy',
-  '/posts/mermaid-test': '/posts/mermaid-diagrams',
-  '/posts/mermaid-diagram-test': '/posts/mermaid-diagrams',
-  '/posts/astro-suite-vault-modular-guide': '/posts/obsidian-vault-guide',
-  '/posts/astro-suite-obsidian-vault-guide-astro-modular': '/posts/obsidian-vault-guide',
-  '/projects/obsidian-astro-composer': '/projects/astro-composer',
-  '/docs/api-reference': '/docs/api',
-  '/docs/astro-modular-configuration': '/docs/configuration',
-  '/docs/sourcetree-and-git': '/docs/sourcetree-and-git-setup'
+  '/privacy': '/privacy-policy'
 },
   image: {
     service: {

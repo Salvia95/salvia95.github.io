@@ -1,5 +1,5 @@
 ---
-title: Projects
-description: View all related projects.
+title: 프로젝트
+description: 진행한 프로젝트 목록입니다.
 ---
-Related projects.
+진행한 프로젝트 목록입니다.
