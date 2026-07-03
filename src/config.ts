@@ -492,30 +492,44 @@ export function getTableOfContentsEnabled(): boolean {
 }
 
 export function getFontFamily(fontName: string): string {
-  // Convert font name to CSS font-family with fallbacks
+  // Convert font name to a CSS font-family fallback chain (excludes the
+  // primary font itself, which getFontFamily prepends below along with a
+  // Korean fallback so Hangul renders consistently regardless of which
+  // Latin font is chosen).
   const fontMap: Record<string, string> = {
-    'Inter': "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
-    'Roboto': "'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-    'Open Sans': "'Open Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-    'Lato': "'Lato', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-    'Poppins': "'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-    'Source Sans Pro': "'Source Sans Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-    'Nunito': "'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-    'Montserrat': "'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-    'Playfair Display': "'Playfair Display', Georgia, 'Times New Roman', serif",
-    'Merriweather': "'Merriweather', Georgia, 'Times New Roman', serif",
-    'Lora': "'Lora', Georgia, 'Times New Roman', serif",
-    'Crimson Text': "'Crimson Text', Georgia, 'Times New Roman', serif",
-    'PT Serif': "'PT Serif', Georgia, 'Times New Roman', serif",
-    'Libre Baskerville': "'Libre Baskerville', Georgia, 'Times New Roman', serif",
-    'Fira Code': "'Fira Code', 'Monaco', 'Consolas', 'Courier New', monospace",
-    'JetBrains Mono': "'JetBrains Mono', 'Monaco', 'Consolas', 'Courier New', monospace",
-    'Source Code Pro': "'Source Code Pro', 'Monaco', 'Consolas', 'Courier New', monospace",
-    'IBM Plex Mono': "'IBM Plex Mono', 'Monaco', 'Consolas', 'Courier New', monospace",
-    'Cascadia Code': "'Cascadia Code', 'Monaco', 'Consolas', 'Courier New', monospace",
+    'Inter': "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+    'Roboto': "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+    'Open Sans': "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+    'Lato': "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+    'Poppins': "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+    'Source Sans Pro': "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+    'Nunito': "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+    'Montserrat': "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+    'Playfair Display': "Georgia, 'Times New Roman', serif",
+    'Merriweather': "Georgia, 'Times New Roman', serif",
+    'Lora': "Georgia, 'Times New Roman', serif",
+    'Crimson Text': "Georgia, 'Times New Roman', serif",
+    'PT Serif': "Georgia, 'Times New Roman', serif",
+    'Libre Baskerville': "Georgia, 'Times New Roman', serif",
+    'Fira Code': "'Monaco', 'Consolas', 'Courier New', monospace",
+    'JetBrains Mono': "'Monaco', 'Consolas', 'Courier New', monospace",
+    'Source Code Pro': "'Monaco', 'Consolas', 'Courier New', monospace",
+    'IBM Plex Mono': "'Monaco', 'Consolas', 'Courier New', monospace",
+    'Cascadia Code': "'Monaco', 'Consolas', 'Courier New', monospace",
   };
-  
-  return fontMap[fontName] || `'${fontName}', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`;
+
+  const latinFallback = fontMap[fontName] || "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+
+  // None of the fonts above ship Hangul glyphs, so on a Korean-language site
+  // every Korean character would otherwise fall through to whatever CJK font
+  // (if any) happens to be installed on the visitor's OS. Insert a webfont
+  // (loaded via getGoogleFontsUrl) plus common system CJK fonts before the
+  // generic fallback so Korean text renders consistently everywhere.
+  const koreanFallback = siteConfig.language === 'kr'
+    ? "'Noto Sans KR', 'Apple SD Gothic Neo', 'Malgun Gothic', "
+    : '';
+
+  return `'${fontName}', ${koreanFallback}${latinFallback}`;
 }
 
 export function getGoogleFontsUrl(headingFont: string, bodyFont: string): string {
@@ -536,7 +550,15 @@ export function getGoogleFontsUrl(headingFont: string, bodyFont: string): string
   if (googleFonts.includes(bodyFont)) {
     fonts.add(bodyFont);
   }
-  
+
+  // Always load a Korean webfont for Korean-language sites so Hangul renders
+  // consistently instead of depending on whichever CJK font (if any) is
+  // installed on the visitor's system. Matches the fallback added in
+  // getFontFamily().
+  if (siteConfig.language === 'kr') {
+    fonts.add('Noto Sans KR');
+  }
+
   // If no Google Fonts are needed, return empty string
   if (fonts.size === 0) {
     return '';
