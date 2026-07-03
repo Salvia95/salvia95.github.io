@@ -104,11 +104,11 @@ const paletteIcon = allSectionsDisabled ? 'search' : 'command';
           hasShortcut ? (
             <button
               id="command-palette-trigger"
-              class="flex items-center space-x-2 px-3 py-2 text-sm text-primary-500 dark:text-primary-400 bg-primary-50 dark:bg-primary-800 rounded-lg hover:bg-primary-100 dark:hover:bg-primary-700 transition-colors"
+              class="flex items-center space-x-2 p-2 md:px-3 md:py-2 text-sm text-primary-500 dark:text-primary-400 bg-primary-50 dark:bg-primary-800 rounded-lg hover:bg-primary-100 dark:hover:bg-primary-700 transition-colors"
               aria-label="Open command palette"
             >
               <Icon name={paletteIcon} class="w-5 h-5" />
-              <kbd class="text-xs font-medium text-primary-600 dark:text-primary-300">
+              <kbd class="hidden md:inline text-xs font-medium text-primary-600 dark:text-primary-300">
                 {shortcutKey}
               </kbd>
             </button>

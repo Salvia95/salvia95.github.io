@@ -25,10 +25,23 @@ export const getStaticPaths: GetStaticPaths = async () => {
     }
 
     // Generate paths for each tag
-    return allTags.map(tag => ({
+    const paths = allTags.map(tag => ({
       params: { tag: tag },
       props: { tag, allPosts: sortedPosts, allTags }
     }));
+
+    // Also generate a lowercase redirect path for any tag that isn't already
+    // all-lowercase, so a manually typed or shared lowercase tag URL (e.g.
+    // /posts/tag/spring) reaches the real "Spring" tag page instead of 404ing.
+    // Skipped when the lowercase form collides with another real tag.
+    const lowercaseRedirects = allTags
+      .filter(tag => tag.toLowerCase() !== tag && !allTags.includes(tag.toLowerCase()))
+      .map(tag => ({
+        params: { tag: tag.toLowerCase() },
+        props: { redirectTo: `/posts/tag/${encodeURIComponent(tag)}` }
+      }));
+
+    return [...paths, ...lowercaseRedirects];
   } catch (error) {
     if (isDev) {
     }
@@ -36,12 +49,17 @@ export const getStaticPaths: GetStaticPaths = async () => {
   }
 };
 
-const { tag, allPosts, allTags } = Astro.props as {
-  tag: string;
-  allPosts: any[];
-  allTags: string[];
+const { tag, allPosts, allTags, redirectTo } = Astro.props as {
+  tag?: string;
+  allPosts?: any[];
+  allTags?: string[];
+  redirectTo?: string;
 };
 const isDev = import.meta.env.DEV;
+
+if (redirectTo) {
+  return Astro.redirect(redirectTo, 301);
+}
 
 // Validate tag parameter
 if (!tag || typeof tag !== 'string') {

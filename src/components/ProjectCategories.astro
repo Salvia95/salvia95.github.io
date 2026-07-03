@@ -19,7 +19,7 @@ const sortedCategories = [...categories].sort();
   <div class="categories-container p-4 bg-white dark:bg-primary-900 rounded-xl border border-primary-200 dark:border-primary-700 shadow-lg backdrop-blur-sm bg-opacity-95 dark:bg-opacity-95">
     <h3 class="font-semibold text-primary-900 dark:text-primary-50 mb-3 flex items-center text-sm">
       <Icon name="folder-open" class="w-4 h-4 mr-2" />
-      Categories
+      카테고리
     </h3>
 
     <div class="flex flex-wrap gap-2">
@@ -88,18 +88,10 @@ const sortedCategories = [...categories].sort();
     /* Keep the active background and text colors - don't override them */
   }
 
-  .category-text {
-    @apply truncate max-w-32;
-  }
-
   /* Responsive adjustments */
   @media (max-width: 640px) {
     .category-item {
       @apply text-xs px-2 py-1;
-    }
-
-    .category-text {
-      @apply max-w-24;
     }
   }
 </style>
