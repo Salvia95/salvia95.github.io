@@ -23,14 +23,21 @@ pnpm build   # 정적 빌드 (dist/)
 
 ## 콘텐츠 구조
 
-- `src/content/posts/` - 글
-- `src/content/projects/` - 프로젝트
-- `src/content/pages/` - 소개, 연락처 등 고정 페이지
+글·프로젝트·문서(posts/projects/docs)는 **별도 private 저장소 `document-repo`** 에서 관리하며,
+그중 `publish: true` 로 표시된 문서만 빌드 시 이 저장소로 가져와 배포합니다.
+자세한 설정·워크플로우는 [`docs/content-separation/README.md`](docs/content-separation/README.md) 참고.
+
+- `document-repo/publish/blog/gitio/{posts,projects,docs}/` - 글·프로젝트·문서 (private)
+- `src/content/pages/` - 소개, 연락처 등 고정 페이지 (코드 레포 유지)
+- `src/content/special/` - 홈/404/목록 페이지 (코드 레포 유지)
+- `content-sources.config.mjs` - 문서 저장소 매핑·선별 설정
 - `src/config.ts` - 사이트 전역 설정
 
 ## 배포
 
-`main` 브랜치에 푸시하면 GitHub Actions(`.github/workflows/deploy.yml`)가 자동으로 빌드 후 GitHub Pages에 배포합니다.
+- `main` 브랜치 푸시(테마/코드 변경) 또는 `document-repo` 푸시(문서 변경) 시
+  GitHub Actions(`.github/workflows/deploy.yml`)가 자동으로 빌드 후 GitHub Pages에 배포합니다.
+- 문서 저장소 푸시 → 코드 레포 배포 트리거는 `repository_dispatch(content-updated)` 로 연결됩니다.
 
 ## License
 

@@ -1,9 +1,12 @@
 name: Deploy to GitHub Pages
 
 on:
-  # main 브랜치에 푸시할 때마다 실행
+  # main 브랜치에 푸시할 때마다 실행 (테마/코드 변경)
   push:
     branches: [ main ]
+  # 문서 저장소(document-repo) 푸시 시 자동 트리거 (repository_dispatch)
+  repository_dispatch:
+    types: [ content-updated ]
   # 수동으로도 실행 가능
   workflow_dispatch:
 
@@ -22,9 +25,17 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout site code
         uses: actions/checkout@v4
-        
+
+      - name: Checkout private content (document-repo)
+        uses: actions/checkout@v4
+        with:
+          repository: Salvia95/document-repo
+          token: ${{ secrets.DOCS_REPO_TOKEN }}
+          path: document-repo
+          persist-credentials: false
+
       - name: Setup pnpm
         uses: pnpm/action-setup@v2
         with:
@@ -41,6 +52,9 @@ jobs:
         
       - name: Build site
         run: pnpm run build
+        env:
+          # import-content.js 가 이 경로의 문서 저장소에서 publish:true 문서를 가져온다
+          DOCS_LOCAL_PATH: document-repo
         
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

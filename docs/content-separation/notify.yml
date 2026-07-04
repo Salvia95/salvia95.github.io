@@ -1,0 +1,29 @@
+# 이 파일을 document-repo 의 .github/workflows/notify.yml 로 복사하세요.
+#
+# 역할: document-repo(main)에 푸시가 발생하면 코드 레포(salvia95.github.io)의
+#       Deploy 워크플로를 repository_dispatch(content-updated) 로 트리거한다.
+#
+# 사전 준비: document-repo 의 Settings > Secrets and variables > Actions 에
+#   DISPATCH_TOKEN 시크릿 등록 (코드 레포의 Actions 를 트리거할 수 있는 PAT).
+#   - fine-grained PAT 권장: 리소스=Salvia95/salvia95.github.io, 권한=Contents:read + Metadata:read
+#     그리고 "Actions: read and write" 는 dispatch 에 불필요. repository_dispatch 는
+#     Contents 쓰기 권한이 필요하므로 Contents: read and write 로 설정.
+#     (classic PAT 를 쓸 경우 repo 스코프)
+
+name: Notify site to redeploy
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger salvia95.github.io deploy
+        run: |
+          curl -sSf -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.DISPATCH_TOKEN }}" \
+            https://api.github.com/repos/Salvia95/salvia95.github.io/dispatches \
+            -d '{"event_type":"content-updated"}'

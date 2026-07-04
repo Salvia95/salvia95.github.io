@@ -5,9 +5,10 @@
   "description": "A minimal, elegant blog theme for Astro heavily inspired by Obsidian, designed for clarity, performance, and seamless compatibility with Obsidian markdown workflows.",
   "main": "index.js",
   "scripts": {
-    "dev": "cross-env ASTRO_CONTENT_COLLECTION_CACHE=false node scripts/setup-dev.mjs && node scripts/sync-images.js && node scripts/process-aliases.js && node scripts/generate-deployment-config.js && node scripts/generate-graph-data.js && astro dev --host localhost --port 5000",
-    "build": "node scripts/sync-images.js && node scripts/process-aliases.js && node scripts/generate-deployment-config.js && node scripts/generate-graph-data.js && astro build",
+    "dev": "cross-env ASTRO_CONTENT_COLLECTION_CACHE=false node scripts/setup-dev.mjs && node scripts/import-content.js --dev && node scripts/sync-images.js && node scripts/process-aliases.js && node scripts/generate-deployment-config.js && node scripts/generate-graph-data.js && astro dev --host localhost --port 5000",
+    "build": "node scripts/import-content.js --prod && node scripts/sync-images.js && node scripts/process-aliases.js && node scripts/generate-deployment-config.js && node scripts/generate-graph-data.js && astro build",
     "preview": "astro preview --host localhost --port 5000",
+    "import-content": "node scripts/import-content.js",
     "sync-images": "node scripts/sync-images.js",
     "process-aliases": "node scripts/process-aliases.js",
     "generate-deployment-config": "node scripts/generate-deployment-config.js",

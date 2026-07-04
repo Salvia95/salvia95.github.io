@@ -10,6 +10,9 @@ const postsCollection = defineCollection({
     date: z.coerce.date().default(() => new Date()),
     tags: z.array(z.string()).nullable().optional(),
     draft: z.boolean().optional(),
+    // 공개 배포 게이트: document-repo에서 이 값이 true인 문서만 사이트로 가져옴
+    // (scripts/import-content.js). 로컬 dev(--dev)에서는 무시하고 전부 미리보기.
+    publish: z.boolean().optional(),
     image: z.any().nullable().optional().transform((val) => {
       // Handle various Obsidian syntax formats
       if (Array.isArray(val)) {
@@ -86,6 +89,8 @@ const projectsCollection = defineCollection({
     hideCoverImage: z.boolean().optional(),
     hideTOC: z.boolean().optional(),
     draft: z.boolean().optional(),
+    // 공개 배포 게이트 (posts와 동일)
+    publish: z.boolean().optional(),
     noIndex: z.boolean().optional(),
     featured: z.boolean().optional(),
   }),
@@ -117,6 +122,8 @@ const docsCollection = defineCollection({
     hideCoverImage: z.boolean().optional(),
     hideTOC: z.boolean().optional(),
     draft: z.boolean().optional(),
+    // 공개 배포 게이트 (posts와 동일)
+    publish: z.boolean().optional(),
     noIndex: z.boolean().optional(),
     showTOC: z.boolean().optional(),
     featured: z.boolean().optional(),
