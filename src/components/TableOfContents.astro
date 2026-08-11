@@ -5,22 +5,28 @@ import { getTableOfContentsDepth } from '@/config';
 
 export interface Props {
   headings: Heading[];
+  // "sidebar" = floating index map, "inline" = collapsible block above the content
+  variant?: 'sidebar' | 'inline';
 }
 
-const { headings } = Astro.props;
+const { headings, variant = 'sidebar' } = Astro.props;
 
 // Filter and structure headings using configurable depth
 const maxDepth = getTableOfContentsDepth();
 const filteredHeadings = headings.filter(h => h.depth >= 2 && h.depth <= maxDepth);
+
+// Unique id per instance so multiple ToCs (e.g. desktop sidebar + mobile inline)
+// can coexist on the same page without clashing ids / aria-controls.
+const listId = `toc-list-${variant}`;
 ---
 
 {filteredHeadings.length > 0 && (
-  <nav class="toc-nav toc-container p-4 bg-white dark:bg-primary-900 rounded-xl border border-primary-200 dark:border-primary-700 shadow-lg backdrop-blur-sm bg-opacity-95 dark:bg-opacity-95">
+  <nav class={`toc-nav toc-container toc-variant-${variant} p-4 bg-white dark:bg-primary-900 rounded-xl border border-primary-200 dark:border-primary-700 shadow-lg backdrop-blur-sm bg-opacity-95 dark:bg-opacity-95`}>
     <div class="toc-content pr-2">
-      <button 
+      <button
         class="toc-toggle w-full font-semibold text-primary-900 dark:text-primary-50 mb-3 flex items-center justify-between text-sm hover:text-highlight-600 dark:hover:text-highlight-400 transition-colors"
         aria-expanded="true"
-        aria-controls="toc-list"
+        aria-controls={listId}
       >
         <div class="flex items-center">
           <Icon name="list" class="w-4 h-4 mr-2" />
@@ -28,11 +34,11 @@ const filteredHeadings = headings.filter(h => h.depth >= 2 && h.depth <= maxDept
         </div>
         <Icon name="chevron-down" class="w-4 h-4 toc-chevron transition-transform duration-200" />
       </button>
-      
-      <ul class="space-y-2 toc-list" id="toc-list">
+
+      <ul class="space-y-2 toc-list" id={listId}>
         {filteredHeadings.map(heading => (
           <li class={`toc-item toc-level-${heading.depth}`}>
-            <a 
+            <a
               href={`#${heading.slug}`}
               class="toc-link block text-sm text-primary-600 dark:text-primary-300 hover:text-highlight-600 dark:hover:text-highlight-400 transition-colors py-1"
               data-heading={heading.slug}
@@ -47,90 +53,80 @@ const filteredHeadings = headings.filter(h => h.depth >= 2 && h.depth <= maxDept
 )}
 
 <script>
-  // Global function to initialize table of contents
+  // Initialize every table-of-contents instance on the page.
+  // Multiple ToCs can coexist (e.g. a floating desktop sidebar + a mobile
+  // inline block), so each instance is wired up independently.
   function initializeTableOfContents() {
-    const tocLinks = document.querySelectorAll('.toc-link');
-    const headings = document.querySelectorAll('h2, h3, h4, h5, h6');
-    const tocToggle = document.querySelector('.toc-toggle') as HTMLButtonElement;
-    const tocList = document.querySelector('.toc-list') as HTMLElement;
-    const tocChevron = document.querySelector('.toc-chevron') as HTMLElement;
-    
-    if (!tocLinks.length || !headings.length) return;
-    
-    // Remove existing event listeners to prevent duplicates
-    if (tocToggle) {
-      const newToggle = tocToggle.cloneNode(true) as HTMLButtonElement;
-      tocToggle.parentNode?.replaceChild(newToggle, tocToggle);
-    }
-    
-    // Get fresh references after cloning
-    const freshTocToggle = document.querySelector('.toc-toggle') as HTMLButtonElement;
-    const freshTocList = document.querySelector('.toc-list') as HTMLElement;
-    const freshTocChevron = document.querySelector('.toc-chevron') as HTMLElement;
-    
-    // TOC Toggle functionality
-    if (freshTocToggle && freshTocList && freshTocChevron) {
-      freshTocToggle.addEventListener('click', () => {
-        const isExpanded = freshTocToggle.getAttribute('aria-expanded') === 'true';
-        
+    const navs = Array.from(document.querySelectorAll('.toc-nav')) as HTMLElement[];
+    const headings = Array.from(
+      document.querySelectorAll('h2, h3, h4, h5, h6')
+    ) as HTMLElement[];
+
+    if (!navs.length) return;
+
+    // Wire the collapse/expand toggle for each instance (guard against
+    // double-binding, which would otherwise cancel each other out).
+    navs.forEach(nav => {
+      const toggle = nav.querySelector('.toc-toggle') as HTMLButtonElement | null;
+      const list = nav.querySelector('.toc-list') as HTMLElement | null;
+      const chevron = nav.querySelector('.toc-chevron') as HTMLElement | null;
+
+      if (!toggle || !list || !chevron) return;
+      if (toggle.dataset.tocBound === 'true') return;
+      toggle.dataset.tocBound = 'true';
+
+      toggle.addEventListener('click', () => {
+        const isExpanded = toggle.getAttribute('aria-expanded') === 'true';
         if (isExpanded) {
-          // Collapse
-          freshTocList.style.display = 'none';
-          freshTocToggle.setAttribute('aria-expanded', 'false');
-          freshTocChevron.style.transform = 'rotate(90deg)';
+          list.style.display = 'none';
+          toggle.setAttribute('aria-expanded', 'false');
+          chevron.style.transform = 'rotate(90deg)';
         } else {
-          // Expand
-          freshTocList.style.display = 'block';
-          freshTocToggle.setAttribute('aria-expanded', 'true');
-          freshTocChevron.style.transform = 'rotate(0deg)';
+          list.style.display = 'block';
+          toggle.setAttribute('aria-expanded', 'true');
+          chevron.style.transform = 'rotate(0deg)';
         }
       });
-    }
-    
-    // Highlight active section in TOC
+    });
+
+    // Highlight the active section across all instances.
     function highlightTOC() {
+      const tocLinks = document.querySelectorAll('.toc-link');
+      if (!tocLinks.length || !headings.length) return;
+
       let current = '';
-      
       headings.forEach(heading => {
-        const rect = heading.getBoundingClientRect();
-        if (rect.top <= 100) {
+        if (heading.getBoundingClientRect().top <= 100) {
           current = heading.id;
         }
       });
-      
+
       tocLinks.forEach(link => {
         const href = link.getAttribute('href')?.slice(1);
-        if (href === current) {
-          link.classList.add('active');
-        } else {
-          link.classList.remove('active');
+        link.classList.toggle('active', !!current && href === current);
+      });
+    }
+
+    // Always call the latest highlight closure so a single scroll listener
+    // keeps working across Swup page transitions (which replace the DOM).
+    (window as any).__tocHighlight = highlightTOC;
+
+    if (!(window as any).__tocScrollBound) {
+      (window as any).__tocScrollBound = true;
+      let ticking = false;
+      window.addEventListener('scroll', () => {
+        if (!ticking) {
+          requestAnimationFrame(() => {
+            const fn = (window as any).__tocHighlight;
+            if (typeof fn === 'function') fn();
+            ticking = false;
+          });
+          ticking = true;
         }
       });
     }
-    
-    // Update active link on scroll
-    let ticking = false;
-    window.addEventListener('scroll', () => {
-      if (!ticking) {
-        requestAnimationFrame(() => {
-          highlightTOC();
-          ticking = false;
-        });
-        ticking = true;
-      }
-    });
-    
-    // Initial highlight
+
     highlightTOC();
-    
-    // Force scrollbar style refresh
-    const tocNav = document.querySelector('.toc-container') as HTMLElement;
-    if (tocNav) {
-      // Trigger a reflow to force style recalculation
-      tocNav.style.display = 'none';
-      tocNav.offsetHeight; // Trigger reflow
-      tocNav.style.display = '';
-    }
   }
 
   // Make function globally available
@@ -180,31 +176,16 @@ const filteredHeadings = headings.filter(h => h.depth >= 2 && h.depth <= maxDept
   }
   
   .toc-nav {
-    /* No height restrictions - let it flow naturally */
+    /* Fill the wrapper provided by the layout (sidebar column or inline block) */
+    width: 100%;
+    max-width: 100%;
   }
-  
+
   .toc-content {
-    /* No scrolling needed - content flows naturally */
+    /* Scrolling for the floating index map is handled by the layout wrapper
+       (#sidebar), so the content flows naturally here. */
   }
-  
-  /* Desktop floating TOC */
-  @media (min-width: 1280px) {
-    .toc-nav {
-      width: 280px;
-      max-width: 280px;
-    }
-  }
-  
-  /* Mobile/Tablet TOC */
-  @media (max-width: 1279px) {
-    .toc-nav {
-      width: 100%;
-      max-width: 100%;
-    }
-  }
-  
-  /* No scrollbar needed - content flows naturally */
-  
+
   .toc-chevron {
     @apply transition-transform duration-200;
   }
