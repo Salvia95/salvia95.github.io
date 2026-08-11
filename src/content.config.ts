@@ -10,6 +10,11 @@ const postsCollection = defineCollection({
     date: z.coerce.date().default(() => new Date()),
     tags: z.array(z.string()).nullable().optional(),
     draft: z.boolean().optional(),
+    // 시리즈 캐러셀: 폴더의 index.md에 series: true 를 두면 그 폴더를 하나의
+    // 시리즈로 인식하고, 같은 폴더의 나머지 글을 소속 글로 묶는다.
+    series: z.boolean().optional(),
+    summary: z.string().nullable().optional(), // 시리즈 한 줄 요약(캐러셀 좌측)
+    seriesOrder: z.number().optional(),        // (선택) 동점 시 정렬 보조
     // 공개 배포 게이트: document-repo에서 이 값이 true인 문서만 사이트로 가져옴
     // (scripts/import-content.js). 로컬 dev(--dev)에서는 무시하고 전부 미리보기.
     publish: z.boolean().optional(),

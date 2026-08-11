@@ -9,6 +9,8 @@ import PostCard from '@/components/PostCard.astro';
 import Tags from '@/components/Tags.astro';
 import Pagination from '@/components/Pagination.astro';
 import Icon from '@/components/Icon.astro';
+import SeriesCarousel from '@/components/SeriesCarousel.astro';
+import { getTopSeries } from '@/utils/series';
 
 // Get special content for posts page
 let postsPageContent;
@@ -34,6 +36,10 @@ const visiblePosts = allPosts.filter(post => shouldShowPost(post, isDev));
 
 // Sort posts by date (newest first)
 const sortedPosts = sortPostsByDate(visiblePosts);
+
+// Series carousel: top-N most recently updated series (shown on the main view only)
+const seriesCfg = siteConfig.postOptions.seriesCarousel;
+const topSeries = seriesCfg.enabled ? getTopSeries(allPosts, isDev, seriesCfg.count) : [];
 
 // Filter by tag if specified
 const filteredPosts = selectedTag
@@ -102,6 +108,11 @@ const pagination = {
 
   <div class="py-8 relative">
     <div class="mx-auto px-4 sm:px-6 lg:px-8 mb-12" style={`max-width: ${siteConfig.layout.contentWidth}`}>
+      <!-- Series carousel (main view only, not while filtering by tag) -->
+      {topSeries.length > 0 && !selectedTag && (
+        <SeriesCarousel series={topSeries} intervalMs={seriesCfg.intervalMs} />
+      )}
+
       <!-- Header -->
       <header class="mb-8">
         <div class="flex items-start justify-between mb-3">
