@@ -237,6 +237,13 @@ export function shouldShowPost(post: Post, isDev: boolean = false): boolean {
     return false;
   }
 
+  // Series index files (a folder's index.md flagged with `series: true`) are
+  // metadata for the series carousel, not standalone posts — keep them out of
+  // listings, feeds, adjacency navigation, and generated routes.
+  if ((post.data as any).series === true) {
+    return false;
+  }
+
   // In development, show all posts (even drafts)
   if (isDev) {
     return true;

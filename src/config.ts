@@ -141,6 +141,11 @@ export interface SiteConfig {
       showOrphanedPosts: boolean;
     };
     postNavigation: boolean;
+    seriesCarousel: {
+      enabled: boolean;
+      count: number;
+      intervalMs: number;
+    };
     showPostCardCoverImages: "all" | "featured" | "home" | "posts" | "featured-and-posts" | "none";
     postCardAspectRatio: AspectRatio;
     customPostCardAspectRatio?: string;
@@ -402,6 +407,14 @@ export const siteConfig: SiteConfig = {
     },
     // [CONFIG:POST_OPTIONS_POST_NAVIGATION]
     postNavigation: true,
+    seriesCarousel: {
+      // [CONFIG:POST_OPTIONS_SERIES_CAROUSEL_ENABLED]
+      enabled: true,
+      // [CONFIG:POST_OPTIONS_SERIES_CAROUSEL_COUNT]
+      count: 3, // 최근 업데이트된 시리즈 상위 N개를 노출
+      // [CONFIG:POST_OPTIONS_SERIES_CAROUSEL_INTERVAL_MS]
+      intervalMs: 5000, // 자동 전환 간격(ms)
+    },
     // [CONFIG:POST_OPTIONS_SHOW_POST_CARD_COVER_IMAGES]
     showPostCardCoverImages: "featured-and-posts", // "all" | "featured" | "home" | "posts" | "featured-and-posts" | "none"
     // [CONFIG:POST_OPTIONS_POST_CARD_ASPECT_RATIO]
@@ -442,7 +455,7 @@ export const siteConfig: SiteConfig = {
 };
 
 // Utility functions
-export function getFeature(feature: keyof Omit<SiteConfig["postOptions"], "postsPerPage" | "showPostCardCoverImages" | "postCardAspectRatio" | "customPostCardAspectRatio" | "linkedMentions" | "graphView" | "comments">): boolean {
+export function getFeature(feature: keyof Omit<SiteConfig["postOptions"], "postsPerPage" | "showPostCardCoverImages" | "postCardAspectRatio" | "customPostCardAspectRatio" | "linkedMentions" | "graphView" | "comments" | "seriesCarousel">): boolean {
   return siteConfig.postOptions[feature];
 }
 
