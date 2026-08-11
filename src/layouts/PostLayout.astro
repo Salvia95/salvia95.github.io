@@ -285,7 +285,7 @@ if (siteConfig.postOptions.graphView.enabled && siteConfig.postOptions.graphView
       <!-- Desktop Sidebar - floats to the right of the content container.
            h-full gives the sticky child room to travel alongside the article. -->
       {(hasLocalGraphConnections || showRightTOC) && (
-        <div class="hidden xl:block absolute top-0 left-full ml-1 w-52 h-full">
+        <div class="hidden xl:block absolute top-0 left-full ml-1 w-64 h-full">
           <div
             class={`${tocSticky ? 'sticky top-24 max-h-[calc(100vh-7rem)] overflow-y-auto' : 'top-24'} ${hasLocalGraphConnections && showRightTOC ? 'space-y-4' : ''}`}
             id="sidebar"
