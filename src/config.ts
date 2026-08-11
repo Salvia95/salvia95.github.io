@@ -37,6 +37,8 @@ export interface SiteConfig {
   tableOfContents: {
     enabled: boolean;
     depth: number;
+    position: "right" | "inline";
+    sticky: boolean;
   };
   footer: {
     enabled: boolean;
@@ -221,6 +223,10 @@ export const siteConfig: SiteConfig = {
     enabled: true,
     // [CONFIG:TABLE_OF_CONTENTS_DEPTH]
     depth: 4, // Maximum heading depth to include in ToC (2-6, where 2=H2, 3=H3, etc.)
+    // [CONFIG:TABLE_OF_CONTENTS_POSITION]
+    position: "right", // "right" = floating sidebar to the right of the post, "inline" = collapsible block above the content
+    // [CONFIG:TABLE_OF_CONTENTS_STICKY]
+    sticky: true, // When position is "right", keep the ToC pinned in view while scrolling
   },
   footer: {
     // [CONFIG:FOOTER_ENABLED]
@@ -491,6 +497,14 @@ export function getTableOfContentsEnabled(): boolean {
   return siteConfig.tableOfContents.enabled;
 }
 
+export function getTableOfContentsPosition(): "right" | "inline" {
+  return siteConfig.tableOfContents.position;
+}
+
+export function getTableOfContentsSticky(): boolean {
+  return siteConfig.tableOfContents.sticky;
+}
+
 export function getFontFamily(fontName: string): string {
   // Convert font name to a CSS font-family fallback chain (excludes the
   // primary font itself, which getFontFamily prepends below along with a
@@ -679,6 +693,9 @@ function validateSiteConfig(config: SiteConfig): { isValid: boolean; errors: str
   }
   if (config.tableOfContents.depth < 2 || config.tableOfContents.depth > 6) {
     errors.push(`Table of contents depth must be between 2 and 6 (where 2=H2, 3=H3, etc.). Current value is ${config.tableOfContents.depth}. Adjust tableOfContents.depth.`);
+  }
+  if (!['right', 'inline'].includes(config.tableOfContents.position)) {
+    errors.push(`Table of contents position must be "right" or "inline". Current value is "${config.tableOfContents.position}". Adjust tableOfContents.position.`);
   }
   if (config.homeOptions.recentPosts.count < 1) {
     errors.push('Recent posts count must be at least 1. Adjust homeOptions.recentPosts.count.');

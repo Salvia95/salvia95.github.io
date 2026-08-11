@@ -69,6 +69,15 @@ const hideTOC = post.data.hideTOC === true;
 const shouldShowTOC = !hideTOC && siteConfig.tableOfContents.enabled && headings.length > 0;
 const toc = shouldShowTOC ? await generateTOC(headings) : [];
 
+// Table of contents placement:
+// - "right": floating index map to the right of the article on wide screens,
+//            with a collapsible inline fallback on narrower screens.
+// - "inline": collapsible block rendered above the article content.
+const tocPosition = siteConfig.tableOfContents.position;
+const tocSticky = siteConfig.tableOfContents.sticky;
+const showRightTOC = shouldShowTOC && tocPosition === 'right';
+const showInlineTOC = shouldShowTOC && (tocPosition === 'inline' || tocPosition === 'right');
+
 // Get adjacent posts for navigation
 const { prev: prevPost, next: nextPost } = getAdjacentPosts(visiblePosts, post.id);
 
@@ -203,6 +212,15 @@ if (siteConfig.postOptions.graphView.enabled && siteConfig.postOptions.graphView
           )}
         </header>
 
+        <!-- Inline table of contents -->
+        <!-- Shown above the content when position is "inline" (all sizes), or as a
+             fallback on narrower screens when the floating right index map is hidden. -->
+        {showInlineTOC && (
+          <div class={`toc-inline mb-8 ${tocPosition === 'right' ? 'xl:hidden' : ''}`}>
+            <TableOfContents headings={toc} variant="inline" />
+          </div>
+        )}
+
         <!-- Article content -->
         <div class="prose dark:prose-dark max-w-none" id="post-content">
           <Content />
@@ -264,23 +282,28 @@ if (siteConfig.postOptions.graphView.enabled && siteConfig.postOptions.graphView
         </div>
       </article>
 
-      <!-- Desktop Sidebar - floats to the right of the content container -->
-      <div class="hidden xl:block absolute top-0 left-full ml-1 w-64">
-        <div class={`top-24 ${hasLocalGraphConnections || shouldShowTOC ? 'space-y-4' : ''}`} id="sidebar">
-          {hasLocalGraphConnections && (
-            <div id="local-graph-sidebar">
-              <LocalGraph currentSlug={post.id} />
-            </div>
-          )}
+      <!-- Desktop Sidebar - floats to the right of the content container.
+           h-full gives the sticky child room to travel alongside the article. -->
+      {(hasLocalGraphConnections || showRightTOC) && (
+        <div class="hidden xl:block absolute top-0 left-full ml-1 w-64 h-full">
+          <div
+            class={`${tocSticky ? 'sticky top-24 max-h-[calc(100vh-7rem)] overflow-y-auto' : 'top-24'} ${hasLocalGraphConnections && showRightTOC ? 'space-y-4' : ''}`}
+            id="sidebar"
+          >
+            {hasLocalGraphConnections && (
+              <div id="local-graph-sidebar">
+                <LocalGraph currentSlug={post.id} />
+              </div>
+            )}
 
-
-          {shouldShowTOC && (
-            <div id="toc">
-              <TableOfContents headings={toc} />
-            </div>
-          )}
+            {showRightTOC && (
+              <div id="toc">
+                <TableOfContents headings={toc} variant="sidebar" />
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   </div>
 
