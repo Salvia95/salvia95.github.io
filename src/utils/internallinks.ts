@@ -1,5 +1,35 @@
 import type { Post, WikilinkMatch } from "@/types";
 import { visit } from "unist-util-visit";
+// @ts-ignore - plain .mjs config without type declarations (build-time only)
+import contentSourcesConfig from "../../content-sources.config.mjs";
+
+// The document-repo subtree that becomes the site root (e.g. "publish/blog/gitio").
+// Obsidian's "absolute path in vault" links embed this prefix, so a link like
+//   publish/blog/gitio/posts/dev/my-post.md
+// would otherwise be treated as a literal slug and rendered as
+//   /posts/publish/blog/gitio/posts/dev/my-post  (broken + leaks repo paths).
+// import-content.js copies only from within this root, so stripping the prefix
+// here yields the real site-relative path (posts/dev/my-post.md).
+const CONTENT_ROOT_PREFIX = String(
+  (contentSourcesConfig && contentSourcesConfig.contentRoot) || ""
+).replace(/^\/+|\/+$/g, "");
+
+// Remove a leading document-repo content-root prefix from an internal link
+// target. Handles an optional leading slash and is a no-op when the prefix is
+// absent, so it is safe to apply idempotently at multiple processing points.
+function stripContentRootPrefix(url: string): string {
+  if (!CONTENT_ROOT_PREFIX || typeof url !== "string") return url;
+  const candidates = [
+    `${CONTENT_ROOT_PREFIX}/`,
+    `/${CONTENT_ROOT_PREFIX}/`,
+  ];
+  for (const prefix of candidates) {
+    if (url.startsWith(prefix)) {
+      return url.slice(prefix.length);
+    }
+  }
+  return url;
+}
 
 // Global posts cache for build-time wikilink resolution
 let globalPostsCache: any[] = [];
@@ -235,7 +265,7 @@ function extractLinkTextFromUrlWithAnchor(
   allPosts: any[] = [],
   allPages: any[] = []
 ): { linkText: string | null; anchor: string | null } {
-  url = url.trim();
+  url = stripContentRootPrefix(url.trim());
 
   // Parse anchor if present
   const { link, anchor } = parseLinkWithAnchor(url);
@@ -439,7 +469,10 @@ export function remarkWikilinks() {
           });
         } else {
           // Process link wikilink - WIKILINKS ONLY WORK WITH POSTS
-          const { link, anchor } = parseLinkWithAnchor(linkText);
+          const { link: rawLink, anchor } = parseLinkWithAnchor(linkText);
+          // Strip a document-repo vault-absolute prefix (publish/blog/gitio/...)
+          // so vault-absolute wikilinks resolve to the real post slug.
+          const link = stripContentRootPrefix(rawLink);
 
           // Handle different link formats
           let url: string;
@@ -549,7 +582,8 @@ export function extractWikilinks(content: string): WikilinkMatch[] {
         : [linkContent, linkContent];
 
       // Parse anchor if present
-      const { link: baseLink } = parseLinkWithAnchor(link.trim());
+      const { link: rawBaseLink } = parseLinkWithAnchor(link.trim());
+      const baseLink = stripContentRootPrefix(rawBaseLink);
 
       // Create proper slug for linked mentions
       let slug = baseLink;
@@ -643,6 +677,11 @@ export function remarkStandardLinks() {
   return function transformer(tree: any, file: any) {
     // Process existing link nodes to add wikilink data attributes for internal links
     visit(tree, "link", (node: any) => {
+      // Normalize Obsidian vault-absolute links (publish/blog/gitio/...) down to
+      // the real site-relative path before any prefix-based routing runs.
+      if (node.url) {
+        node.url = stripContentRootPrefix(node.url);
+      }
       if (node.url && isInternalLink(node.url)) {
         const { linkText, anchor } = extractLinkTextFromUrlWithAnchor(node.url);
         if (linkText) {
