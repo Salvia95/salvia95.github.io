@@ -854,6 +854,50 @@ textarea {
   }
 }
 
+/* Attribute headers: the first row and first column label what each row/column
+   represents, so they are always bold and center/middle aligned. Inner cells
+   keep whatever alignment the markdown specifies (e.g. :---:). */
+.prose thead th,
+.prose tbody tr > :first-child {
+  font-weight: 700 !important;
+  text-align: center !important;
+  vertical-align: middle;
+}
+
+/* Diagonal split corner cell (top-left), enabled when that cell uses a `\` or
+   `↘` separator. Left label = column (upper-right triangle), right label = row
+   (lower-left triangle); a thin line runs top-left → bottom-right between them.
+   The cell is already position:sticky (from .prose th), so the absolutely
+   positioned labels anchor to it. */
+.prose th.diagonal-header {
+  min-width: 7.5rem;
+  height: 3.5rem;
+  text-align: initial !important;
+  background-image: linear-gradient(
+    to bottom right,
+    transparent calc(50% - 0.6px),
+    currentColor calc(50% - 0.6px),
+    currentColor calc(50% + 0.6px),
+    transparent calc(50% + 0.6px)
+  );
+}
+
+.prose th.diagonal-header .diag-col {
+  position: absolute;
+  top: 0.3rem;
+  right: 0.6rem;
+  font-size: 0.8em;
+  line-height: 1.1;
+}
+
+.prose th.diagonal-header .diag-row {
+  position: absolute;
+  bottom: 0.3rem;
+  left: 0.6rem;
+  font-size: 0.8em;
+  line-height: 1.1;
+}
+
 /* Utility Classes */
 .text-balance { text-wrap: balance; }
 .text-pretty { text-wrap: pretty; }
