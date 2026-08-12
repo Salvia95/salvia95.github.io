@@ -1,0 +1,91 @@
+---
+import type { GetStaticPaths } from 'astro';
+import { getCollection } from 'astro:content';
+import { siteConfig } from '@/config';
+import { shouldShowPost } from '@/utils/markdown';
+import { getSeriesList, type SeriesDetail } from '@/utils/series';
+import BaseLayout from '@/layouts/BaseLayout.astro';
+import PostCard from '@/components/PostCard.astro';
+import Icon from '@/components/Icon.astro';
+
+export const getStaticPaths: GetStaticPaths = async () => {
+  const isDev = import.meta.env.DEV;
+  try {
+    const allPosts = await getCollection('posts');
+    const list = getSeriesList(allPosts, isDev);
+    return list.map((series) => ({
+      params: { slug: series.slug },
+      props: { series },
+    }));
+  } catch (error) {
+    return [];
+  }
+};
+
+const { series } = Astro.props as { series: SeriesDetail };
+
+if (!series) {
+  return Astro.redirect('/404');
+}
+
+const seoData = {
+  title: `${series.title} 시리즈 | ${siteConfig.title}`,
+  description: series.summary || `${series.title} 시리즈에 포함된 글 모음`,
+  canonical: Astro.url.href,
+  ogType: 'website' as const,
+};
+---
+
+<BaseLayout seoData={seoData}>
+  <div class="py-8 relative">
+    <div class="mx-auto px-4 sm:px-6 lg:px-8 mb-12" style={`max-width: ${siteConfig.layout.contentWidth}`}>
+      <!-- Back link -->
+      <div class="mb-4">
+        <a
+          href="/posts"
+          class="inline-flex items-center text-sm text-primary-600 dark:text-primary-300 hover:text-primary-800 dark:hover:text-primary-200 transition-colors"
+        >
+          <Icon name="arrow-left" class="w-4 h-4 mr-1" />
+          전체 글 보기
+        </a>
+      </div>
+
+      <!-- Series header -->
+      <header class="mb-8 overflow-hidden rounded-xl border border-primary-200 dark:border-primary-700 bg-primary-50 dark:bg-primary-900">
+        {series.imageUrl && (
+          <div class="h-40 sm:h-48 md:h-56 overflow-hidden bg-primary-100 dark:bg-primary-800">
+            <img
+              src={series.imageUrl}
+              alt={series.imageAlt}
+              class="w-full h-full object-cover"
+              width="1200"
+              height="224"
+              loading="eager"
+              decoding="async"
+            />
+          </div>
+        )}
+        <div class="p-5 sm:p-6">
+          <span class="inline-block text-[0.7rem] font-semibold uppercase tracking-wide text-highlight-600 dark:text-highlight-400 mb-2">
+            시리즈 · {series.count}개 글
+          </span>
+          <h1 class="text-xl sm:text-2xl font-bold text-primary-900 dark:text-primary-50 leading-tight mb-2">
+            {series.title}
+          </h1>
+          {series.summary && (
+            <p class="text-sm sm:text-base text-primary-600 dark:text-primary-300 leading-relaxed">
+              {series.summary}
+            </p>
+          )}
+        </div>
+      </header>
+
+      <!-- Member posts (reading order: oldest first) -->
+      <div class="space-y-4">
+        {series.members.map((post, index) => (
+          <PostCard post={post} context="posts" eager={index < 2} />
+        ))}
+      </div>
+    </div>
+  </div>
+</BaseLayout>
