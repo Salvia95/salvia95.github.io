@@ -865,16 +865,17 @@ textarea {
 }
 
 /* Diagonal split corner cell (top-left), enabled when that cell uses a `\` or
-   `↘` separator. Left label = column (upper-right triangle), right label = row
-   (lower-left triangle); a thin line runs top-left → bottom-right between them.
-   The cell is already position:sticky (from .prose th), so the absolutely
-   positioned labels anchor to it. */
+   `↘` separator. A thin line runs top-left → bottom-right; the label left of the
+   separator sits in the lower-left triangle, the one on the right in the
+   upper-right triangle. The cell is already position:sticky (from .prose th),
+   so the absolutely positioned labels anchor to it. Labels inherit the header
+   font size/weight for visual consistency with other header cells. */
 .prose th.diagonal-header {
-  min-width: 7.5rem;
-  height: 3.5rem;
+  min-width: 8.5rem;
+  height: 4.25rem;
   text-align: initial !important;
   background-image: linear-gradient(
-    to bottom right,
+    to top right,
     transparent calc(50% - 0.6px),
     currentColor calc(50% - 0.6px),
     currentColor calc(50% + 0.6px),
@@ -882,20 +883,18 @@ textarea {
   );
 }
 
-.prose th.diagonal-header .diag-col {
+.prose th.diagonal-header .diag-tr {
   position: absolute;
-  top: 0.3rem;
-  right: 0.6rem;
-  font-size: 0.8em;
-  line-height: 1.1;
+  top: 0.75rem;
+  right: 1rem;
+  line-height: 1.2;
 }
 
-.prose th.diagonal-header .diag-row {
+.prose th.diagonal-header .diag-bl {
   position: absolute;
-  bottom: 0.3rem;
-  left: 0.6rem;
-  font-size: 0.8em;
-  line-height: 1.1;
+  bottom: 0.75rem;
+  left: 1rem;
+  line-height: 1.2;
 }
 
 /* Utility Classes */
