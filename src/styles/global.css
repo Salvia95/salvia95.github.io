@@ -874,16 +874,22 @@ textarea {
    so the absolutely positioned labels anchor to it. Labels inherit the header
    font size/weight for visual consistency with other header cells. */
 .prose th.diagonal-header {
+  /* Match the header divider color: primary-300 (light) / primary-600 (dark). */
+  --diag-line: rgb(var(--color-primary-300));
   min-width: 8.5rem;
   height: 4.25rem;
   text-align: initial !important;
   background-image: linear-gradient(
     to top right,
     transparent calc(50% - 0.6px),
-    currentColor calc(50% - 0.6px),
-    currentColor calc(50% + 0.6px),
+    var(--diag-line) calc(50% - 0.6px),
+    var(--diag-line) calc(50% + 0.6px),
     transparent calc(50% + 0.6px)
   );
+}
+
+.dark .prose th.diagonal-header {
+  --diag-line: rgb(var(--color-primary-600));
 }
 
 .prose th.diagonal-header .diag-tr {
