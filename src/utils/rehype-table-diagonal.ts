@@ -31,10 +31,11 @@ function firstRowFirstCell(table: any): any | null {
 
 /**
  * Turn a table's top-left header cell into a diagonal split cell when it
- * contains a separator (`\` or `↘`). The text left of the separator is the
- * column attribute (rendered in the upper-right triangle); the text on the
- * right is the row attribute (rendered in the lower-left triangle). Styling of
- * the diagonal line and the two labels lives in global.css (.diagonal-header).
+ * contains a separator (`\` or `↘`). A line runs top-left → bottom-right; the
+ * text left of the separator is placed in the lower-left triangle and the text
+ * on the right in the upper-right triangle, so a cell written as
+ * "행속성 \ 열속성" reads naturally along the diagonal. Styling of the line and
+ * the two labels lives in global.css (.diagonal-header).
  */
 export default function rehypeTableDiagonal() {
   return function transformer(tree: any) {
@@ -59,8 +60,8 @@ export default function rehypeTableDiagonal() {
       }
       if (sepIndex === -1) return;
 
-      const colLabel = text.slice(0, sepIndex).trim(); // left  -> column (upper-right)
-      const rowLabel = text.slice(sepIndex + sepLen).trim(); // right -> row (lower-left)
+      const leftLabel = text.slice(0, sepIndex).trim(); // left  -> lower-left triangle
+      const rightLabel = text.slice(sepIndex + sepLen).trim(); // right -> upper-right triangle
 
       const existing = cell.properties?.className;
       const classes = Array.isArray(existing)
@@ -75,14 +76,14 @@ export default function rehypeTableDiagonal() {
         {
           type: "element",
           tagName: "span",
-          properties: { className: ["diag-col"] },
-          children: [{ type: "text", value: colLabel }],
+          properties: { className: ["diag-tr"] },
+          children: [{ type: "text", value: rightLabel }],
         },
         {
           type: "element",
           tagName: "span",
-          properties: { className: ["diag-row"] },
-          children: [{ type: "text", value: rowLabel }],
+          properties: { className: ["diag-bl"] },
+          children: [{ type: "text", value: leftLabel }],
         },
       ];
     });
