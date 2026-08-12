@@ -13,6 +13,7 @@ export interface SeriesDetail {
   imageAlt: string;
   count: number;
   latest: Date; // most recent member/index date (recency for ranking)
+  index: PostEntry; // the series' index.md — its body is the landing page intro
   members: PostEntry[]; // reading order (oldest first)
 }
 
@@ -100,6 +101,7 @@ export function getSeriesList(
         imageAlt: index.data.imageAlt || index.data.title,
         count: members.length,
         latest,
+        index,
         members,
       },
     });
@@ -127,7 +129,7 @@ export function getTopSeries(
 ): SeriesInfo[] {
   return getSeriesList(allPosts, isDev)
     .slice(0, limit)
-    .map(({ members, ...rest }) => ({
+    .map(({ members, index, ...rest }) => ({
       ...rest,
       href: seriesHref(rest.slug),
     }));

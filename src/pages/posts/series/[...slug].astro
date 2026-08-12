@@ -1,6 +1,6 @@
 ---
 import type { GetStaticPaths } from 'astro';
-import { getCollection } from 'astro:content';
+import { getCollection, render } from 'astro:content';
 import { siteConfig } from '@/config';
 import { shouldShowPost } from '@/utils/markdown';
 import { getSeriesList, type SeriesDetail } from '@/utils/series';
@@ -27,6 +27,16 @@ const { series } = Astro.props as { series: SeriesDetail };
 if (!series) {
   return Astro.redirect('/404');
 }
+
+// index.md 본문을 시리즈 소개글로 렌더링한다. 본문이 비어 있으면(프론트매터만
+// 있는 index.md) 소개 영역 자체를 생략한다.
+const { Content } = await render(series.index);
+const hasIntro = (series.index.body || '').trim().length > 0;
+
+// 소개 본문의 위키링크를 클라이언트에서 실제 글로 해석하기 위한 목록
+const isDev = import.meta.env.DEV;
+const allPosts = await getCollection('posts');
+const visiblePosts = allPosts.filter((p) => shouldShowPost(p as any, isDev));
 
 const seoData = {
   title: `${series.title} 시리즈 | ${siteConfig.title}`,
@@ -73,9 +83,18 @@ const seoData = {
             {series.title}
           </h1>
           {series.summary && (
-            <p class="text-sm sm:text-base text-primary-600 dark:text-primary-300 leading-relaxed">
+            <p class="text-sm sm:text-base italic text-primary-500 dark:text-primary-400 leading-relaxed">
               {series.summary}
             </p>
+          )}
+
+          {hasIntro && (
+            <div
+              class="prose dark:prose-dark max-w-none mt-6 pt-6 border-t border-primary-200 dark:border-primary-700"
+              id="series-content"
+            >
+              <Content />
+            </div>
           )}
         </div>
       </header>
@@ -88,4 +107,58 @@ const seoData = {
       </div>
     </div>
   </div>
+
+  {hasIntro && (
+    <Fragment slot="scripts">
+      <script define:vars={{ posts: visiblePosts }}>
+        // 소개 본문 링크 후처리 - PostLayout 과 동일한 규칙을 적용한다.
+        function processSeriesIntroLinks() {
+          // 외부 링크는 새 탭으로
+          document.querySelectorAll('#series-content a[href]').forEach(link => {
+            const href = link.getAttribute('href');
+            if (href && (href.startsWith('http://') || href.startsWith('https://'))) {
+              if (!link.hasAttribute('target')) {
+                link.setAttribute('target', '_blank');
+                link.setAttribute('rel', 'noopener noreferrer');
+              }
+            }
+          });
+
+          // 위키링크를 실제 글 경로/제목으로 해석
+          document.querySelectorAll('#series-content .wikilink[data-wikilink]').forEach(link => {
+            const linkText = link.dataset.wikilink;
+            const displayOverride = link.dataset.displayOverride;
+
+            const slug = linkText.toLowerCase()
+              .replace(/[^a-z0-9\s-]/g, '')
+              .replace(/\s+/g, '-')
+              .replace(/-+/g, '-')
+              .replace(/^-+|-+$/g, '');
+
+            const post = posts.find(p => p.slug === slug);
+
+            if (post) {
+              link.href = `/posts/${post.id}`;
+
+              if (displayOverride && displayOverride !== 'null' && displayOverride !== 'undefined') {
+                // [[link|display]] - 지정한 표시 텍스트 사용
+                link.textContent = displayOverride;
+              } else if (displayOverride === 'null' || displayOverride === null || displayOverride === 'undefined' || displayOverride === undefined) {
+                // [text](url) - 표시 텍스트를 건드리지 않는다
+              } else {
+                // [[link]] - 글 제목으로 대체
+                link.textContent = post.data.title;
+              }
+            } else {
+              link.classList.add('wikilink-broken');
+              link.title = 'Link not found';
+            }
+          });
+        }
+
+        document.addEventListener('DOMContentLoaded', processSeriesIntroLinks);
+        document.addEventListener('swup:contentReplaced', () => setTimeout(processSeriesIntroLinks, 100));
+      </script>
+    </Fragment>
+  )}
 </BaseLayout>
