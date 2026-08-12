@@ -48,6 +48,10 @@ const pagesCollection = defineCollection({
     description: z.string().nullable().optional().default('No description provided'),
     draft: z.boolean().optional(),
     lastModified: z.coerce.date().optional(),
+    // 공개 배포 게이트 (posts와 동일). document-repo 에서 가져오는 페이지
+    // (about/contact)에 필요하다. 코드 레포가 소유한 페이지는 없어도 된다.
+    publish: z.boolean().optional(),
+    aliases: z.array(z.string()).nullable().optional(),
     image: z.any().nullable().optional().transform((val) => {
       // Handle various Obsidian syntax formats
       if (Array.isArray(val)) {

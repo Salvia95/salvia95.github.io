@@ -26,10 +26,18 @@ export default {
   // 디렉토리 화이트리스트. `from` 은 contentRoot 기준 상대 경로,
   // `to` 는 Astro 콘텐츠 컬렉션 이름(src/content/<to>).
   // 여기에 없는 디렉토리는 어떤 경우에도 사이트로 나가지 않음.
+  //
+  // `keep` 은 그 컬렉션에서 코드 레포가 계속 소유하는 최상위 항목 목록.
+  // import 가 대상 디렉토리를 비울 때 제외되고, document-repo 에 동명 파일이
+  // 있어도 덮어쓰지 않는다. .gitignore 의 예외 규칙과 짝을 이루므로 한쪽만
+  // 고치면 어긋난다.
   mappings: [
     { from: 'posts', to: 'posts' },
     { from: 'projects', to: 'projects' },
     { from: 'docs', to: 'docs' },
+    // about.md / contact.md 는 document-repo 에서 관리한다.
+    // privacy-policy.md 는 사이트 고정 문서라 코드 레포에 남긴다.
+    { from: 'pages', to: 'pages', keep: ['privacy-policy.md'] },
   ],
 
   // 문서 완료/공개 신호로 사용할 프론트매터 필드 이름.

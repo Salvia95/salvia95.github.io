@@ -87,7 +87,12 @@ async function ensureDir(dir) {
   await fs.mkdir(dir, { recursive: true });
 }
 
-async function rmDirContents(dir) {
+// 디렉토리를 비우되, keep 에 적힌 최상위 항목은 남긴다.
+// keep 은 "이 컬렉션에서 코드 레포가 계속 소유하는 파일" 목록이다.
+// (예: src/content/pages 는 about/contact 를 document-repo 에서 받아오지만
+//  privacy-policy.md 는 코드 레포에 둔다. .gitignore 의 예외 규칙과 짝을 이룬다.)
+async function rmDirContents(dir, keep = []) {
+  const keepSet = new Set(keep);
   let entries;
   try {
     entries = await fs.readdir(dir, { withFileTypes: true });
@@ -96,6 +101,7 @@ async function rmDirContents(dir) {
     throw e;
   }
   for (const entry of entries) {
+    if (keepSet.has(entry.name)) continue;
     await fs.rm(path.join(dir, entry.name), { recursive: true, force: true });
   }
 }
@@ -114,14 +120,26 @@ function isAssetReachable(assetRel, includedDirs, includedRawText) {
 async function importMapping(sourceRoot, mapping) {
   const sourceDir = path.join(sourceRoot, mapping.from);
   const targetDir = path.join(destRoot, mapping.to);
+  const keep = mapping.keep || [];
 
   // 대상 컬렉션 디렉토리는 항상 존재하도록(빈 경우에도 astro glob base 유지)
   await ensureDir(targetDir);
 
+  // 소스 디렉토리 자체가 없으면 대상을 건드리지 않는다.
+  // document-repo 에 해당 디렉토리를 만들기 전에 매핑부터 추가하는 과도기에
+  // 기존 콘텐츠가 통째로 날아가는 것을 막는다. ("있는데 비어 있음"은 아래에서
+  // stale 제거 대상으로 처리 — 그건 의도적으로 전부 내린 상태이므로.)
+  try {
+    await fs.access(sourceDir);
+  } catch {
+    log.warn(`   ⏭️  ${mapping.from}: 소스 디렉토리가 없어 건너뜁니다 (${sourceDir})`);
+    return { docs: 0, skipped: 0, assets: 0, missing: true };
+  }
+
   const files = await walk(sourceDir);
   if (files.length === 0) {
     // 소스 디렉토리가 비었으면 대상도 비운다(stale 제거)
-    await rmDirContents(targetDir);
+    await rmDirContents(targetDir, keep);
     return { docs: 0, skipped: 0, assets: 0 };
   }
 
@@ -146,13 +164,22 @@ async function importMapping(sourceRoot, mapping) {
   const includedDirs = new Set(included.map((f) => path.dirname(f.rel)));
   const includedRawText = included.map((f) => rawByFile.get(f.rel)).join('\n');
 
-  // 2) 대상 디렉토리 초기화 후 새로 채움
-  await rmDirContents(targetDir);
+  // 2) 대상 디렉토리 초기화 후 새로 채움 (keep 항목은 보존)
+  await rmDirContents(targetDir, keep);
 
   let docsCopied = 0;
   let assetsCopied = 0;
 
+  const keepSet = new Set(keep);
   for (const f of files) {
+    // keep 대상은 코드 레포가 소유하므로 document-repo 쪽에 동명 파일이 있어도
+    // 덮어쓰지 않는다. (조용한 충돌 대신 경고를 남긴다)
+    const topLevel = f.rel.split(path.sep)[0];
+    if (keepSet.has(topLevel)) {
+      log.warn(`   ⚠️  ${mapping.from}/${f.rel}: 코드 레포가 소유한 파일이라 무시합니다 (keep)`);
+      continue;
+    }
+
     const isMd = MARKDOWN_RE.test(f.rel);
     let copyIt = false;
     if (isMd) {
