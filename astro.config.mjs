@@ -15,6 +15,7 @@ import rehypeMark from './src/utils/rehype-mark.ts';
 import rehypeOptimizeImages from './src/utils/rehype-optimize-images.ts';
 import rehypeSlug from 'rehype-slug';
 import rehypeAutolinkHeadings from 'rehype-autolink-headings';
+import rehypeTableDiagonal from './src/utils/rehype-table-diagonal.ts';
 import { siteConfig } from './src/config.ts';
 import swup from '@swup/astro';
 
@@ -92,6 +93,7 @@ export default defineConfig({
     rehypePlugins: [
       rehypeKatex,
       rehypeMark,
+      rehypeTableDiagonal,
       rehypeOptimizeImages,
       [rehypeSlug, {
         test: (node) => node.tagName !== 'h1'
