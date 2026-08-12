@@ -810,12 +810,15 @@ textarea {
   z-index: 10;
   font-size: 0.875rem;
   letter-spacing: 0.025em;
-  border-right: none !important; /* No vertical lines between header cells */
+  /* Vertical divider between header cells. Uses a color one step darker than the
+     header background so it stays visible (the base border-primary-200 would blend
+     into the primary-200 header). The last header cell is cleared below. */
+  @apply border-r border-primary-300 dark:border-primary-600;
   @apply border-b-2 border-primary-300 dark:border-primary-600; /* Use theme colors for border */
 }
 
-.dark .prose th {
-  border-right: none !important; /* No vertical lines between header cells in dark mode */
+.prose th:last-child {
+  border-right: none !important; /* No divider after the last header cell */
 }
 
 /* Alternating rows using dynamic theme colors */
