@@ -26,11 +26,15 @@ import {
   writeFileSync,
   mkdirSync,
   existsSync,
-  readdirSync,
-  statSync,
 } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
+// 사이트 렌더링과 동일한 링크 해석 규칙을 공유한다. 여기서 따로 구현하면
+// 그래프의 노드 id 와 실제 페이지 URL 이 어긋난다.
+import {
+  getPostIndex,
+  resolveLinkTarget,
+} from "../src/utils/post-index.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -76,33 +80,11 @@ if (!existsSync(OUTPUT_DIR)) {
 }
 
 /**
- * Generate a stable ID from file path
- * @param {string} filePath - The file path
- * @param {string} collectionType - The collection type (e.g., 'posts')
- * @returns {string} - The generated ID
- */
-function generateNodeId(filePath, collectionType) {
-  // Remove collection prefix and extension
-  let id = filePath.replace(`src/content/${collectionType}/`, "");
-  id = id.replace(".md", "");
-  id = id.replace("/index", ""); // Handle folder-based posts
-
-  // Clean up the ID: lowercase, replace spaces/special chars with hyphens
-  id = id.toLowerCase().replace(/[^a-z0-9-]/g, "-");
-
-  // Remove multiple consecutive hyphens
-  id = id.replace(/-+/g, "-");
-
-  // Remove leading/trailing hyphens
-  id = id.replace(/^-+|-+$/g, "");
-
-  return id;
-}
-
-/**
  * Extract wikilinks from content (Obsidian-style)
+ * @param {string} content
+ * @param {string} [fromId] 링크가 적힌 글의 post id (같은 폴더 우선 매칭용)
  */
-function extractWikilinks(content) {
+function extractWikilinks(content, fromId) {
   const matches = [];
   const wikilinkRegex = /!?\[\[([^\]]+)\]\]/g;
   let match;
@@ -122,8 +104,8 @@ function extractWikilinks(content) {
       const baseLink =
         anchorIndex === -1 ? link : link.substring(0, anchorIndex);
 
-      // Generate target ID from the link
-      const targetId = generateNodeId(baseLink, "posts");
+      // 렌더링과 동일한 규칙으로 링크 대상 id 를 얻는다
+      const { id: targetId } = resolveLinkTarget(baseLink, { fromId });
 
       matches.push({
         link: baseLink,
@@ -139,7 +121,7 @@ function extractWikilinks(content) {
 /**
  * Extract standard markdown links from content
  */
-function extractStandardLinks(content) {
+function extractStandardLinks(content, fromId) {
   const matches = [];
   const markdownLinkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
   let match;
@@ -164,8 +146,8 @@ function extractStandardLinks(content) {
           (!linkText.includes("/") && !url.startsWith("/"));
 
         if (isPostLink) {
-          // Generate target ID from the link
-          const targetId = generateNodeId(linkText, "posts");
+          // 렌더링과 동일한 규칙으로 링크 대상 id 를 얻는다
+          const { id: targetId } = resolveLinkTarget(linkText, { fromId });
 
           matches.push({
             link: linkText,
@@ -281,31 +263,18 @@ function extractLinkTextFromUrl(url) {
 function readContentFiles(dirPath) {
   const posts = [];
 
+  // 예전에는 최상위 파일과 폴더의 index.md 만 읽어서, 시리즈 폴더 안의 소속 글
+  // (chunk-batch/01-intro.md)이 그래프에서 통째로 빠졌다. 이제는 사이트와 같은
+  // 인덱스를 써서 중첩된 글까지 모두 노드로 만든다.
   try {
-    const items = readdirSync(dirPath);
+    for (const ref of getPostIndex()) {
+      const filePath = join(dirPath, ref.relativePath);
+      if (!existsSync(filePath)) continue;
 
-    for (const item of items) {
-      const itemPath = join(dirPath, item);
-      const stat = statSync(itemPath);
-
-      if (stat.isDirectory()) {
-        // Handle folder-based posts
-        const indexPath = join(itemPath, "index.md");
-        if (existsSync(indexPath)) {
-          const content = readFileSync(indexPath, "utf-8");
-          const parsed = parseMarkdownFile(content, item);
-          if (parsed) {
-            posts.push(parsed);
-          }
-        }
-      } else if (item.endsWith(".md")) {
-        // Handle single-file posts
-        const content = readFileSync(itemPath, "utf-8");
-        const slug = item.replace(".md", "");
-        const parsed = parseMarkdownFile(content, slug);
-        if (parsed) {
-          posts.push(parsed);
-        }
+      const content = readFileSync(filePath, "utf-8");
+      const parsed = parseMarkdownFile(content, ref.id);
+      if (parsed) {
+        posts.push(parsed);
       }
     }
   } catch (error) {
@@ -377,7 +346,8 @@ function parseMarkdownFile(content, slug) {
             key === "imageOG" ||
             key === "hideCoverImage" ||
             key === "noIndex" ||
-            key === "featured"
+            key === "featured" ||
+            key === "series"
           ) {
             data[key] = value === "true";
           } else {
@@ -436,12 +406,15 @@ async function generateGraphData() {
 
     // Process each post
     for (const post of visiblePosts) {
-      // Add post node
+      // Add post node.
+      // 시리즈 index.md 는 일반 글 라우트(/posts/<id>)가 만들어지지 않고
+      // 시리즈 랜딩 페이지(/posts/series/<id>)로만 존재한다. 그래프 컴포넌트가
+      // `/posts/${slug}` 로 이동하므로 slug 에 series/ 를 붙여 준다.
       const postNode = {
         id: post.id,
         type: "post",
         title: post.data.title,
-        slug: post.id,
+        slug: post.data.series === true ? `series/${post.id}` : post.id,
         date: post.data.date
           ? post.data.date.toISOString()
           : new Date().toISOString(),
@@ -450,14 +423,19 @@ async function generateGraphData() {
       nodes.push(postNode);
 
       // Extract links from post content
-      const wikilinks = extractWikilinks(post.body);
-      const standardLinks = extractStandardLinks(post.body);
+      const wikilinks = extractWikilinks(post.body, post.id);
+      const standardLinks = extractStandardLinks(post.body, post.id);
       const allLinks = [...wikilinks, ...standardLinks];
 
-      // Process links to other posts
+      // Process links to other posts.
+      // 같은 글을 여러 번(파일명·제목·별칭 등) 가리켜도 간선은 하나여야 한다.
+      const linkedTargets = new Set();
       for (const link of allLinks) {
         const targetPost = visiblePosts.find((p) => p.id === link.slug);
         if (targetPost && targetPost.id !== post.id) {
+          if (linkedTargets.has(targetPost.id)) continue;
+          linkedTargets.add(targetPost.id);
+
           // Add post-to-post connection
           connections.push({
             source: post.id,
@@ -465,14 +443,20 @@ async function generateGraphData() {
             type: "link",
           });
 
-          // Update connection counts
-          postNode.connections++;
-          const targetNode = nodes.find((n) => n.id === targetPost.id);
-          if (targetNode) {
-            targetNode.connections++;
-          }
         }
       }
+    }
+
+    // 연결 수는 간선을 모두 만든 뒤에 센다. 루프 안에서 세면 아직 만들어지지
+    // 않은 대상 노드를 놓쳐서, 파일을 읽은 순서에 따라 값이 달라진다.
+    const connectionCounts = new Map();
+    for (const conn of connections) {
+      for (const nodeId of [conn.source, conn.target]) {
+        connectionCounts.set(nodeId, (connectionCounts.get(nodeId) || 0) + 1);
+      }
+    }
+    for (const node of nodes) {
+      node.connections = connectionCounts.get(node.id) || 0;
     }
 
     // Apply maxNodes filtering if configured

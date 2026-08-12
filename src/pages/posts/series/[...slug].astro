@@ -33,11 +33,6 @@ if (!series) {
 const { Content } = await render(series.index);
 const hasIntro = (series.index.body || '').trim().length > 0;
 
-// 소개 본문의 위키링크를 클라이언트에서 실제 글로 해석하기 위한 목록
-const isDev = import.meta.env.DEV;
-const allPosts = await getCollection('posts');
-const visiblePosts = allPosts.filter((p) => shouldShowPost(p as any, isDev));
-
 const seoData = {
   title: `${series.title} 시리즈 | ${siteConfig.title}`,
   description: series.summary || `${series.title} 시리즈에 포함된 글 모음`,
@@ -110,10 +105,10 @@ const seoData = {
 
   {hasIntro && (
     <Fragment slot="scripts">
-      <script define:vars={{ posts: visiblePosts }}>
-        // 소개 본문 링크 후처리 - PostLayout 과 동일한 규칙을 적용한다.
+      <script>
+        // 위키링크는 빌드 타임에 해석된다(src/utils/post-index.ts).
+        // 남은 건 외부 링크를 새 탭으로 여는 처리뿐이다.
         function processSeriesIntroLinks() {
-          // 외부 링크는 새 탭으로
           document.querySelectorAll('#series-content a[href]').forEach(link => {
             const href = link.getAttribute('href');
             if (href && (href.startsWith('http://') || href.startsWith('https://'))) {
@@ -121,37 +116,6 @@ const seoData = {
                 link.setAttribute('target', '_blank');
                 link.setAttribute('rel', 'noopener noreferrer');
               }
-            }
-          });
-
-          // 위키링크를 실제 글 경로/제목으로 해석
-          document.querySelectorAll('#series-content .wikilink[data-wikilink]').forEach(link => {
-            const linkText = link.dataset.wikilink;
-            const displayOverride = link.dataset.displayOverride;
-
-            const slug = linkText.toLowerCase()
-              .replace(/[^a-z0-9\s-]/g, '')
-              .replace(/\s+/g, '-')
-              .replace(/-+/g, '-')
-              .replace(/^-+|-+$/g, '');
-
-            const post = posts.find(p => p.slug === slug);
-
-            if (post) {
-              link.href = `/posts/${post.id}`;
-
-              if (displayOverride && displayOverride !== 'null' && displayOverride !== 'undefined') {
-                // [[link|display]] - 지정한 표시 텍스트 사용
-                link.textContent = displayOverride;
-              } else if (displayOverride === 'null' || displayOverride === null || displayOverride === 'undefined' || displayOverride === undefined) {
-                // [text](url) - 표시 텍스트를 건드리지 않는다
-              } else {
-                // [[link]] - 글 제목으로 대체
-                link.textContent = post.data.title;
-              }
-            } else {
-              link.classList.add('wikilink-broken');
-              link.title = 'Link not found';
             }
           });
         }

@@ -79,10 +79,6 @@ const structuredData = {
   "codeRepository": project.data.repositoryUrl
 };
 
-// Get all posts for wikilink resolution
-const allPosts = await getCollection('posts');
-const visiblePosts = allPosts.filter(p => shouldShowPost(p as any, isDev));
-
 // Get all projects to check if any have categories
 const allProjectsForCategories = await getCollection('projects');
 const visibleProjectsForCategories = allProjectsForCategories.filter(p => shouldShowPost(p as any, isDev));
@@ -301,7 +297,7 @@ const { prev: prevProject, next: nextProject } = getAdjacentPosts(visibleProject
   </div>
 
   <Fragment slot="scripts">
-    <script define:vars={{ posts: visiblePosts, commentsEnabled: siteConfig.postOptions.comments.enabled, postTitle: project.data.title, postSlug: project.id }}>
+    <script>
       // Remove duplicate H1 from project content (since we render it in header)
       document.addEventListener('DOMContentLoaded', function() {
         const projectContent = document.getElementById('project-content');
@@ -368,48 +364,7 @@ const { prev: prevProject, next: nextProject } = getAdjacentPosts(visibleProject
         // Make initializeImageGrids globally accessible
         window.initializeImageGrids = initializeImageGrids;
 
-        // Process wikilinks - unified logic for all wikilink types
-        const wikilinks = document.querySelectorAll('.wikilink[data-wikilink]');
-
-        wikilinks.forEach(link => {
-          const linkText = link.dataset.wikilink;
-          const displayOverride = link.dataset.displayOverride;
-          const currentDisplayText = link.textContent;
-
-          // Find the matching post
-          const slug = linkText.toLowerCase()
-            .replace(/[^a-z0-9\s-]/g, '')
-            .replace(/\s+/g, '-')
-            .replace(/-+/g, '-')
-            .replace(/^-+|-+$/g, '');
-
-          const post = posts.find(p => p.id === slug);
-
-          if (post) {
-            // Update href
-            link.href = `/posts/${post.id}`;
-
-            // Simple logic:
-            // - If displayOverride exists and is not null, it's a wikilink with custom text [[link|display]] - use it
-            // - If displayOverride is null/undefined, it's a standard markdown link [text](url) - NEVER change the text
-            // - If displayOverride is empty string, it's a naked wikilink [[link]] - use post title
-
-            if (displayOverride && displayOverride !== 'null' && displayOverride !== 'undefined') {
-              // Wikilink with custom display: [[link|display]]
-              link.textContent = displayOverride;
-            } else if (displayOverride === 'null' || displayOverride === null || displayOverride === 'undefined' || displayOverride === undefined) {
-              // Standard markdown link: [text](url) - NEVER change the display text
-              // Keep currentDisplayText as-is
-            } else {
-              // Naked wikilink: [[link]] - use post title
-              link.textContent = post.data.title;
-            }
-          } else {
-            // Mark as broken link
-            link.classList.add('wikilink-broken');
-            link.title = 'Link not found';
-          }
-        });
+        // 위키링크 해석은 빌드 타임에 끝난다(src/utils/post-index.ts).
       });
 
       // Handle Swup page transitions for comments

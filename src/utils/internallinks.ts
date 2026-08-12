@@ -1,34 +1,31 @@
 import type { Post, WikilinkMatch } from "@/types";
 import { visit } from "unist-util-visit";
-// @ts-ignore - plain .mjs config without type declarations (build-time only)
-import contentSourcesConfig from "../../content-sources.config.mjs";
+// 링크 해석은 post-index 에 모여 있다. astro(vite)와 순수 node 스크립트가 같은
+// 규칙을 쓰도록 .mjs 로 두었고, 상대 경로로 가져온다 (astro.config.mjs 가 이
+// 파일을 직접 import 하는 시점에는 vite 의 "@" 별칭이 아직 적용되지 않는다).
+// @ts-ignore - plain .mjs module without type declarations (build-time only)
+import {
+  getPostIndex,
+  normalizePostPath,
+  resolvePostRef,
+  stripContentRootPrefix,
+} from "./post-index.mjs";
 
-// The document-repo subtree that becomes the site root (e.g. "publish/blog/gitio").
-// Obsidian's "absolute path in vault" links embed this prefix, so a link like
-//   publish/blog/gitio/posts/dev/my-post.md
-// would otherwise be treated as a literal slug and rendered as
-//   /posts/publish/blog/gitio/posts/dev/my-post  (broken + leaks repo paths).
-// import-content.js copies only from within this root, so stripping the prefix
-// here yields the real site-relative path (posts/dev/my-post.md).
-const CONTENT_ROOT_PREFIX = String(
-  (contentSourcesConfig && contentSourcesConfig.contentRoot) || ""
-).replace(/^\/+|\/+$/g, "");
+// 이미 확정된 post id 로 제목을 찾는다. 경로로 적은 링크([[posts/a/b]])의
+// 표시 텍스트를 원시 경로 대신 글 제목으로 바꾸는 데 쓴다.
+function titleOfPostId(id: string): string {
+  const found = getPostIndex().find((p) => p.id === id);
+  return found?.title || "";
+}
 
-// Remove a leading document-repo content-root prefix from an internal link
-// target. Handles an optional leading slash and is a no-op when the prefix is
-// absent, so it is safe to apply idempotently at multiple processing points.
-function stripContentRootPrefix(url: string): string {
-  if (!CONTENT_ROOT_PREFIX || typeof url !== "string") return url;
-  const candidates = [
-    `${CONTENT_ROOT_PREFIX}/`,
-    `/${CONTENT_ROOT_PREFIX}/`,
-  ];
-  for (const prefix of candidates) {
-    if (url.startsWith(prefix)) {
-      return url.slice(prefix.length);
-    }
-  }
-  return url;
+// 해석에 실패한 링크는 빌드 로그에 남겨 오타를 잡을 수 있게 한다.
+const warnedLinks = new Set<string>();
+function warnUnresolvedLink(target: string, fromFile?: string): void {
+  const key = `${fromFile || ""}::${target}`;
+  if (warnedLinks.has(key)) return;
+  warnedLinks.add(key);
+  const where = fromFile ? ` (${fromFile.split("/src/content/").pop()})` : "";
+  console.warn(`[internallinks] 링크를 해석하지 못했습니다: [[${target}]]${where}`);
 }
 
 // Global posts cache for build-time wikilink resolution
@@ -477,27 +474,36 @@ export function remarkWikilinks() {
           // Handle different link formats
           let url: string;
           let wikilinkData: string;
+          // 해석된 글의 제목. 표시 텍스트가 따로 없을 때 대신 쓴다.
+          let resolvedTitle = "";
+          let unresolved = false;
 
           if (link.startsWith("posts/")) {
-            // Handle posts/path format
-            const postPath = link.replace("posts/", "");
-            // Conservative approach: only remove /index if it follows folder-based pattern
-            // Pattern: folder-name/index -> folder-name (where folder-name matches the slug)
-            const cleanPath =
-              postPath.endsWith("/index") && postPath.split("/").length === 2
-                ? postPath.replace("/index", "")
-                : postPath;
+            // 경로로 적은 링크 - 로더와 동일한 슬러그 규칙으로 정규화한다.
+            // (후행 "/index" 제거도 여기서 함께 처리된다)
+            const cleanPath = normalizePostPath(link.replace(/^posts\//, ""));
             url = `/posts/${cleanPath}`;
             wikilinkData = cleanPath;
+            resolvedTitle = titleOfPostId(cleanPath);
           } else if (link.includes("/")) {
             // Paths with slashes that don't start with posts/ are not valid for wikilinks
             // Skip processing - this would not work in Obsidian
             return;
           } else {
-            // Handle simple slug format - ASSUMES POSTS COLLECTION
-            const slugifiedLink = createSlugFromTitle(link);
-            url = `/posts/${slugifiedLink}`;
-            wikilinkData = link.trim();
+            // 디렉토리 없는 링크(옵시디언 "shortest path when possible").
+            // 파일명·제목·별칭으로 실제 글을 찾는다.
+            const ref = resolvePostRef(link, { fromFile: file?.path });
+            if (ref) {
+              url = `/posts/${ref.id}`;
+              wikilinkData = ref.id;
+              resolvedTitle = ref.title;
+            } else {
+              // 못 찾으면 기존 동작(슬러그 추측)으로 폴백하고 경고를 남긴다.
+              unresolved = true;
+              warnUnresolvedLink(link, file?.path);
+              url = `/posts/${createSlugFromTitle(link)}`;
+              wikilinkData = link.trim();
+            }
           }
 
           // Add anchor if present
@@ -515,7 +521,9 @@ export function remarkWikilinks() {
             data: {
               hName: "a",
               hProperties: {
-                className: ["wikilink"],
+                className: unresolved
+                  ? ["wikilink", "wikilink-broken"]
+                  : ["wikilink"],
                 "data-wikilink": wikilinkData,
                 "data-display-override": displayText,
               },
@@ -523,7 +531,8 @@ export function remarkWikilinks() {
             children: [
               {
                 type: "text",
-                value: displayText || link.trim(),
+                // [[link|display]] > 해석된 글 제목 > 링크에 적힌 문자열
+                value: displayText || resolvedTitle || link.trim(),
               },
             ],
           });
@@ -559,7 +568,10 @@ export function remarkWikilinks() {
 }
 
 // Extract wikilinks from content (Obsidian-style)
-export function extractWikilinks(content: string): WikilinkMatch[] {
+export function extractWikilinks(
+  content: string,
+  fromId?: string
+): WikilinkMatch[] {
   const matches: WikilinkMatch[] = [];
 
   // Extract wikilinks [[...]] and image wikilinks ![[...]]
@@ -585,25 +597,17 @@ export function extractWikilinks(content: string): WikilinkMatch[] {
       const { link: rawBaseLink } = parseLinkWithAnchor(link.trim());
       const baseLink = stripContentRootPrefix(rawBaseLink);
 
-      // Create proper slug for linked mentions
-      let slug = baseLink;
+      // 백링크 비교 대상은 post id 이므로, 렌더링과 동일한 규칙으로 해석한다.
+      // (예전에는 ASCII slugify 를 써서 한글 제목 링크가 빈 문자열이 되었다)
+      let finalSlug: string;
       if (baseLink.startsWith("posts/")) {
-        const postPath = baseLink.replace("posts/", "");
-        // Conservative approach: only remove /index if it follows folder-based pattern
-        if (postPath.endsWith("/index") && postPath.split("/").length === 2) {
-          slug = postPath.replace("/index", "");
-        } else {
-          slug = postPath;
-        }
+        finalSlug = normalizePostPath(baseLink.replace(/^posts\//, ""));
+      } else if (baseLink.includes("/")) {
+        finalSlug = normalizePostPath(baseLink);
+      } else {
+        const ref = resolvePostRef(baseLink, { fromId });
+        finalSlug = ref ? ref.id : normalizePostPath(baseLink);
       }
-
-      // Convert to slug format
-      const finalSlug = slug
-        .toLowerCase()
-        .replace(/[^a-z0-9\s-]/g, "")
-        .replace(/\s+/g, "-")
-        .replace(/-+/g, "-")
-        .replace(/^-+|-+$/g, "");
 
       matches.push({
         link: baseLink,
@@ -724,15 +728,12 @@ export function remarkStandardLinks() {
               // Handle special 404 marker
               baseUrl = "/404";
             } else if (node.url.startsWith("posts/")) {
-              // Posts: /posts/slug/
-              baseUrl = `/${node.url.replace(/\.md.*$/, "")}`;
-              // Conservative approach: only remove /index if it follows folder-based pattern
-              if (
-                baseUrl.endsWith("/index") &&
-                baseUrl.split("/").length === 3
-              ) {
-                baseUrl = baseUrl.replace("/index", "");
-              }
+              // Posts: /posts/slug/ - 로더와 동일한 슬러그 규칙으로 정규화
+              // (후행 "/index" 제거도 함께 처리된다)
+              const postPath = node.url
+                .replace(/\.md.*$/, "")
+                .replace(/^posts\//, "");
+              baseUrl = `/posts/${normalizePostPath(postPath)}`;
             } else if (node.url.startsWith("pages/")) {
               // Pages: /slug/ (no prefix) - use URL mapping
               baseUrl = mapRelativeUrlToSiteUrl(
@@ -777,15 +778,17 @@ export function remarkStandardLinks() {
                 // Other special pages - use normal page routing
                 const specialPath = linkText.replace("special/", "");
                 baseUrl = `/${specialPath}`;
+              } else if (linkText.includes("/")) {
+                // 경로가 있는 참조 - 정규화만 하면 된다
+                baseUrl = `/posts/${normalizePostPath(linkText)}`;
               } else {
-                // Assume posts for backward compatibility
-                baseUrl = `/posts/${linkText}`;
-                // Conservative approach: only remove /index if it follows folder-based pattern
-                if (
-                  baseUrl.endsWith("/index") &&
-                  baseUrl.split("/").length === 3
-                ) {
-                  baseUrl = baseUrl.replace("/index", "");
+                // 디렉토리 없는 참조([파일명](01-intro.md)) - 인덱스로 해석한다
+                const ref = resolvePostRef(linkText, { fromFile: file?.path });
+                if (ref) {
+                  baseUrl = `/posts/${ref.id}`;
+                } else {
+                  warnUnresolvedLink(linkText, file?.path);
+                  baseUrl = `/posts/${normalizePostPath(linkText)}`;
                 }
               }
             }
@@ -794,6 +797,15 @@ export function remarkStandardLinks() {
               baseUrl += `#${createAnchorSlug(anchor)}`;
             }
             node.url = baseUrl;
+          } else if (!node.url.startsWith("/") && !node.url.includes("/")) {
+            // 확장자도 경로도 없는 참조([글](01-intro)) - 인덱스로 해석하고,
+            // 못 찾으면 손대지 않는다(사이트 밖 상대 링크일 수 있다).
+            const ref = resolvePostRef(linkText, { fromFile: file?.path });
+            let mappedUrl = ref ? `/posts/${ref.id}` : node.url;
+            if (anchor && !mappedUrl.includes("#")) {
+              mappedUrl += `#${createAnchorSlug(anchor)}`;
+            }
+            node.url = mappedUrl;
           } else {
             // For non-.md URLs, apply URL mapping and handle anchors
             let mappedUrl = mapRelativeUrlToSiteUrl(node.url);
@@ -815,11 +827,15 @@ export function remarkStandardLinks() {
               node.data.hProperties = {};
             }
 
-            // Add wikilink class for styling consistency
+            // Add wikilink class for styling consistency.
+            // remarkWikilinks 가 만든 노드도 여기를 지나므로 중복을 제거한다.
             const existingClasses = node.data.hProperties.className || [];
-            node.data.hProperties.className = Array.isArray(existingClasses)
-              ? [...existingClasses, "wikilink"]
-              : [existingClasses, "wikilink"].filter(Boolean);
+            const classList = Array.isArray(existingClasses)
+              ? existingClasses
+              : [existingClasses].filter(Boolean);
+            node.data.hProperties.className = [
+              ...new Set([...classList, "wikilink"]),
+            ];
           }
         }
       }
@@ -828,7 +844,10 @@ export function remarkStandardLinks() {
 }
 
 // Extract standard markdown links from content (all content types)
-export function extractStandardLinks(content: string): WikilinkMatch[] {
+export function extractStandardLinks(
+  content: string,
+  fromId?: string
+): WikilinkMatch[] {
   const matches: WikilinkMatch[] = [];
 
   // Extract standard markdown links [text](url) that point to internal content
@@ -860,28 +879,16 @@ export function extractStandardLinks(content: string): WikilinkMatch[] {
           (!linkText.includes("/") && !url.startsWith("/"));
 
         if (isPostLink) {
-          // Create proper slug for linked mentions
-          let slug = linkText;
+          // 위키링크와 동일한 해석 규칙 (extractWikilinks 주석 참고)
+          let finalSlug: string;
           if (linkText.startsWith("posts/")) {
-            const postPath = linkText.replace("posts/", "");
-            // Conservative approach: only remove /index if it follows folder-based pattern
-            if (
-              postPath.endsWith("/index") &&
-              postPath.split("/").length === 2
-            ) {
-              slug = postPath.replace("/index", "");
-            } else {
-              slug = postPath;
-            }
+            finalSlug = normalizePostPath(linkText.replace(/^posts\//, ""));
+          } else if (linkText.includes("/")) {
+            finalSlug = normalizePostPath(linkText);
+          } else {
+            const ref = resolvePostRef(linkText, { fromId });
+            finalSlug = ref ? ref.id : normalizePostPath(linkText);
           }
-
-          // Convert to slug format
-          const finalSlug = slug
-            .toLowerCase()
-            .replace(/[^a-z0-9\s-]/g, "")
-            .replace(/\s+/g, "-")
-            .replace(/-+/g, "-")
-            .replace(/^-+|-+$/g, "");
 
           matches.push({
             link: linkText,
@@ -923,9 +930,12 @@ export function remarkInternalLinks() {
 }
 
 // Extract all internal links (both wikilinks and standard links)
-export function extractAllInternalLinks(content: string): WikilinkMatch[] {
-  const wikilinks = extractWikilinks(content);
-  const standardLinks = extractStandardLinks(content);
+export function extractAllInternalLinks(
+  content: string,
+  fromId?: string
+): WikilinkMatch[] {
+  const wikilinks = extractWikilinks(content, fromId);
+  const standardLinks = extractStandardLinks(content, fromId);
 
   // Combine and deduplicate
   const allLinks = [...wikilinks, ...standardLinks];
@@ -962,8 +972,8 @@ export function findLinkedMentions(
       if (!post.body) return null;
 
       // Check both wikilinks and standard markdown links
-      const wikilinks = extractWikilinks(post.body);
-      const standardLinks = extractStandardLinks(post.body);
+      const wikilinks = extractWikilinks(post.body, post.id);
+      const standardLinks = extractStandardLinks(post.body, post.id);
       const allLinks = [...wikilinks, ...standardLinks];
 
       const matchingLinks = allLinks.filter((link) => link.slug === targetSlug);
