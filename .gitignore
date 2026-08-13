@@ -63,3 +63,7 @@ public/projects/
 public/docs/
 # Obsidian 볼트는 document-repo 로 이동 (cutover 후 이 디렉토리는 무시)
 src/content/.obsidian/
+
+# 이 저장소는 pnpm 을 쓴다 (packageManager 필드 + CI 의 pnpm/action-setup).
+# npm 을 잘못 돌렸을 때 생기는 lockfile 이 다시 커밋되지 않도록 무시한다.
+package-lock.json

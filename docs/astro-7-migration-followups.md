@@ -33,16 +33,23 @@
 같은 맥락으로 `src/pages/feed.xml.ts`(Atom) 와 `src/pages/rss.xml.ts`(RSS) 도 병행 중이다.
 이쪽은 포맷이 달라 의도된 중복일 수 있다.
 
-### 2. 죽은 코드 / 의존성
+### 2. 죽은 코드 / 의존성 — ✅ 완료
 
-| 대상 | 상태 |
+정리했다. 남은 것은 아래 `docs` 컬렉션 하나뿐이다.
+
+| 대상 | 조치 |
 |---|---|
-| `astro-redirect-from` (`dependencies`) | 어디서도 import 되지 않음. 리다이렉트는 `astro.config.mjs` 의 `redirects` 와 생성된 `_redirects` 가 담당 |
-| 루트 `vite.config.mjs` | **Astro 는 이 파일을 읽지 않는다.** `astro.config.mjs` 의 `vite` 키만 반영된다. terser 설정·manualChunks 가 적용되는 것처럼 보이지만 전부 무효. `terser` 는 설치돼 있지도 않다 |
-| `src/pages/api/og-image.ts` | HTTP 410 만 돌려주는 4줄짜리 tombstone |
-| `docs` 컬렉션 | 디렉토리는 있으나 마크다운 0개. 빌드마다 "collection is empty" 경고 |
-| `package-lock.json` | 초기 커밋 이후 방치(`name: astro-modular`, `version: 0.3.7`). CI 는 pnpm 을 쓴다 |
-| `@astrojs/check` | `dependencies` 에 있음. `devDependencies` 가 맞다 |
+| `astro-redirect-from` | 제거. 어디서도 import 되지 않았다. 리다이렉트는 `astro.config.mjs` 의 `redirects` 와 생성된 `_redirects` 가 담당 |
+| `lucide` | 제거. `Icon.astro` 는 SVG path 를 직접 하드코딩한다(Lucide 모양이지만 패키지에서 가져오지 않음) |
+| 루트 `vite.config.mjs` | 삭제. Astro 는 이 파일을 읽지 않는다 — `terser` 가 설치돼 있지도 않은데 빌드가 통과하고, `manualChunks` 의 `vendor` 청크도 산출물에 없다는 점으로 확인 |
+| `src/pages/api/og-image.ts` | 삭제. 410 을 의도했지만 **정적 빌드에서는 불가능**했다. 프리렌더돼 파일로 나가면서 실제로는 "사용 불가" 본문을 **HTTP 200** 으로 반환하고 있었다. 삭제하면 404 가 되어 의미가 맞다 |
+| `package-lock.json` | 삭제 + `.gitignore` 에 추가. 초기 커밋 이후 방치(`name: astro-modular`, `version: 0.3.7`)였고 CI 는 pnpm 을 쓴다 |
+| `@astrojs/check`, `typescript`, `@types/d3` | `dependencies` → `devDependencies` 이동. 런타임 번들에 들어갈 것이 아니다 |
+
+**남음 — `docs` 컬렉션**: 디렉토리는 있으나 마크다운 0개라 빌드마다 "collection is empty" 경고가 난다.
+이건 죽은 코드가 아니라 **콘텐츠 없는 기능**이다. `src/pages/docs/*`, `DocumentationLayout`,
+`DocumentationCard`, 스키마가 모두 살아 있으므로 지우면 기능 제거가 된다. 문서를 쓸 계획이 있으면
+그대로 두고, 없으면 관련 라우트/레이아웃/컴포넌트/스키마를 함께 걷어내야 한다. **판단 필요.**
 
 ### 3. 레거시 Swup 리스너
 
