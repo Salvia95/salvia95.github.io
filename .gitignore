@@ -67,3 +67,7 @@ src/content/.obsidian/
 # 이 저장소는 pnpm 을 쓴다 (packageManager 필드 + CI 의 pnpm/action-setup).
 # npm 을 잘못 돌렸을 때 생기는 lockfile 이 다시 커밋되지 않도록 무시한다.
 package-lock.json
+
+# graphin MCP 서버가 만드는 로컬 코드 인덱스/워크스페이스 데이터.
+# 기계마다 다시 생성되는 캐시라 커밋하지 않는다.
+.graphin/
