@@ -54,7 +54,14 @@ jobs:
         env:
           # import-content.js 가 이 경로의 문서 저장소에서 publish:true 문서를 가져온다
           DOCS_LOCAL_PATH: document-repo
-        
+
+      # 빌드 뒤에 둔다. astro check 는 콘텐츠 컬렉션 타입(.astro/types.d.ts)이
+      # 있어야 정확한데, 그건 import-content 가 문서를 가져온 뒤 astro build 가
+      # 생성한다. 여기서 실패하면 artifact 업로드로 넘어가지 않으므로 타입 에러가
+      # 그대로 배포되는 일을 막는다.
+      - name: Type check
+        run: pnpm run check
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v5
         with:

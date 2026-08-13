@@ -7,19 +7,29 @@
 
 ## Tech Stack
 
-[![Astro](https://img.shields.io/badge/Astro-5-FF5D01?logo=astro&logoColor=white)](https://astro.build/)
+[![Astro](https://img.shields.io/badge/Astro-7-FF5D01?logo=astro&logoColor=white)](https://astro.build/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3-38B2AC?logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-38B2AC?logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
 
 [Astro Modular](https://github.com/davidvkimball/astro-modular) 테마를 기반으로 커스터마이징한 블로그입니다.
 
 ## 로컬 개발
 
+Node 22.12 이상이 필요합니다 (`.nvmrc` 참고).
+
 ```bash
 pnpm install
 pnpm dev     # http://localhost:5000
 pnpm build   # 정적 빌드 (dist/)
+pnpm check   # astro check (타입 검사, 배포 워크플로우에서도 실행)
 ```
+
+> 로컬 빌드는 추적 중인 `public/graph/graph-data.json` 을 덮어씁니다.
+> 로컬 `document-repo` 에 전체 콘텐츠가 없으면 불완전하게 생성되므로,
+> 커밋 전에 `git checkout -- public/graph/graph-data.json` 으로 되돌리세요.
+
+Astro 7 마이그레이션에서 범위 밖으로 남긴 작업과 이 저장소 특유의 함정은
+[`docs/astro-7-migration-followups.md`](docs/astro-7-migration-followups.md) 에 정리돼 있습니다.
 
 ## 콘텐츠 구조
 
