@@ -35,7 +35,7 @@
 
 ### 2. 죽은 코드 / 의존성 — ✅ 완료
 
-정리했다. 남은 것은 아래 `docs` 컬렉션 하나뿐이다.
+정리 끝. `docs` 컬렉션은 검토 후 **유지하기로 결정**했다(아래 참고).
 
 | 대상 | 조치 |
 |---|---|
@@ -46,10 +46,18 @@
 | `package-lock.json` | 삭제 + `.gitignore` 에 추가. 초기 커밋 이후 방치(`name: astro-modular`, `version: 0.3.7`)였고 CI 는 pnpm 을 쓴다 |
 | `@astrojs/check`, `typescript`, `@types/d3` | `dependencies` → `devDependencies` 이동. 런타임 번들에 들어갈 것이 아니다 |
 
-**남음 — `docs` 컬렉션**: 디렉토리는 있으나 마크다운 0개라 빌드마다 "collection is empty" 경고가 난다.
-이건 죽은 코드가 아니라 **콘텐츠 없는 기능**이다. `src/pages/docs/*`, `DocumentationLayout`,
-`DocumentationCard`, 스키마가 모두 살아 있으므로 지우면 기능 제거가 된다. 문서를 쓸 계획이 있으면
-그대로 두고, 없으면 관련 라우트/레이아웃/컴포넌트/스키마를 함께 걷어내야 한다. **판단 필요.**
+**`docs` 컬렉션은 유지한다 (결정됨).** 죽은 코드가 아니라 **콘텐츠가 아직 없는 기능**이다.
+`src/pages/docs/*`, `DocumentationLayout`, `DocumentationCard`, 스키마가 모두 살아 있어서
+지우면 기능 제거가 된다. 앞으로 문서를 채울 계획이므로 그대로 둔다.
+
+그 결과 빌드마다 아래 경고가 계속 나오는데, **정상이며 무시해도 된다**:
+
+```
+[WARN] [glob-loader] No files found matching "**/*.md" in directory "src/content/docs"
+```
+
+`document-repo` 의 `publish/blog/gitio/docs/` 에 `publish: true` 문서가 생기면 자동으로 사라진다.
+경고를 없애겠다고 컬렉션을 지우지 말 것.
 
 ### 3. 레거시 Swup 리스너
 
