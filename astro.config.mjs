@@ -6,6 +6,7 @@ import { remarkInternalLinks, remarkFolderImages, remarkImageCaptions } from './
 import remarkCallouts from './src/utils/remark-callouts.ts';
 import remarkImageGrids from './src/utils/remark-image-grids.ts';
 import remarkMermaid from './src/utils/remark-mermaid.ts';
+import remarkD2 from './src/utils/remark-d2.ts';
 import { remarkObsidianEmbeds } from './src/utils/remark-obsidian-embeds.ts';
 import remarkMath from 'remark-math';
 import remarkReadingTime from 'remark-reading-time';
@@ -82,6 +83,9 @@ export default defineConfig({
       remarkCallouts,
       remarkImageGrids,
       remarkMermaid,
+      // D2 는 빌드 타임에 SVG 로 렌더된다. Mermaid 와는 코드블록 언어로 갈리므로
+      // 이전이 끝날 때까지 둘을 함께 둔다.
+      remarkD2,
       [remarkReadingTime, {}],
       [remarkToc, { 
         tight: true,
