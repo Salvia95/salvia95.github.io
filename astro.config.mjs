@@ -1,7 +1,6 @@
 import { defineConfig } from 'astro/config';
 import tailwind from '@astrojs/tailwind';
 import sitemap from '@astrojs/sitemap';
-import mdx from '@astrojs/mdx';
 import { remarkInternalLinks, remarkFolderImages, remarkImageCaptions } from './src/utils/internallinks.ts';
 import remarkCallouts from './src/utils/remark-callouts.ts';
 import remarkImageGrids from './src/utils/remark-image-grids.ts';
@@ -50,7 +49,6 @@ export default defineConfig({
   integrations: [
     tailwind(),
     sitemap(),
-    mdx(),
     swup({
       theme: false,
       animationClass: 'transition-swup-',
