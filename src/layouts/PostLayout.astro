@@ -62,7 +62,7 @@ const visiblePosts = allPosts.filter(p => shouldShowPost(p, isDev));
 
 // Process the post content and get processed data including word count
 const { Content, headings, wordCount, remarkPluginFrontmatter } = await processPost(post);
-const readingTime = calculateReadingTime(post.body);
+const readingTime = calculateReadingTime(post.body ?? "");
 
 // Generate table of contents if enabled
 const hideTOC = post.data.hideTOC === true;

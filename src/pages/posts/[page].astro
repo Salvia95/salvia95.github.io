@@ -10,12 +10,15 @@ import Tags from '@/components/Tags.astro';
 import Pagination from '@/components/Pagination.astro';
 import Icon from '@/components/Icon.astro';
 
-interface PageProps {
+// interface 가 아니라 type 이어야 한다. GetStaticPathsItem['props'] 는
+// Record<string, any> 를 요구하는데, 인덱스 시그니처가 없는 interface 는
+// 거기에 할당되지 않는다 (type alias 는 암묵적으로 만족한다).
+type PageProps = {
   posts: CollectionEntry<'posts'>[];
   currentPage: number;
   totalPages: number;
   postsPerPage: number;
-}
+};
 
 // `satisfies` 를 써야 반환 타입이 그대로 보존돼 InferGetStaticPropsType 이
 // 실제 props 를 뽑아낼 수 있다. `: GetStaticPaths` 로 애노테이션하면 반환

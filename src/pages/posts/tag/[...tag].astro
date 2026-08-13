@@ -61,14 +61,12 @@ if (redirectTo) {
   return Astro.redirect(redirectTo, 301);
 }
 
-// Validate tag parameter
-if (!tag || typeof tag !== 'string') {
-  if (isDev) {
-  }
-  // Return 404 or redirect in production, show error in dev
-  if (!isDev) {
-    return Astro.redirect('/404');
-  }
+// redirectTo 가 아닌 경로는 getStaticPaths 가 tag/allPosts/allTags 를 항상 함께
+// 넘긴다. 하나라도 비어 있으면 라우트 생성이 잘못된 것이므로 404 로 보낸다.
+// (예전에는 프로덕션에서만 리다이렉트하고 dev 에서는 그대로 흘려보내서,
+//  아래 allPosts.filter 와 tag.trim() 이 undefined 로 터질 수 있었다.)
+if (!tag || !allPosts || !allTags) {
+  return Astro.redirect('/404');
 }
 
 // Filter posts by the current tag with error handling

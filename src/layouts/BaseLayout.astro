@@ -1081,7 +1081,14 @@ const scrollbarClass = siteConfig.hideScrollBar ? '' : 'show-scrollbars';
          mermaid 번들은 사이트 전체 JS 의 대부분을 차지한다. 예전에는 무조건 import 해서
          다이어그램이 없는 페이지도 청크를 받았다. 다이어그램이 있을 때만 로드한다. -->
     <script>
-      let mermaidModulePromise = null;
+      // Swup 이 전환 후 호출하는 전역 훅.
+      declare global {
+        interface Window {
+          initializeMermaid: () => Promise<unknown> | undefined;
+        }
+      }
+
+      let mermaidModulePromise: Promise<unknown> | null = null;
 
       function hasMermaidDiagrams() {
         return !!document.querySelector('.mermaid-diagram[data-mermaid-source]');

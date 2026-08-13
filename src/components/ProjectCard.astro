@@ -18,7 +18,7 @@ interface Props {
 const { project, featured = false, eager = false, context = 'projects', showCategories = true } = Astro.props;
 
 // Get excerpt from markdown processing
-const { excerpt } = processMarkdown(project.body);
+const { excerpt } = processMarkdown(project.body ?? "");
 
 const { title, description: rawDescription, date, image: rawImage, imageAlt } = project.data;
 

@@ -1,4 +1,7 @@
 import type { Root, Paragraph, Image } from "mdast";
+// mdast 의 Data 인터페이스에 hName/hProperties/hChildren 를 더해주는 타입 확장.
+// 값은 쓰지 않고 선언 병합만 필요해서 빈 import 로 가져온다.
+import type {} from "mdast-util-to-hast";
 import { visit } from "unist-util-visit";
 
 /**

@@ -27,10 +27,12 @@ const seoData = generatePageSEO(page, Astro.url.href);
 const maxDepth = siteConfig.tableOfContents.depth;
 const toc = headings.filter(h => h.depth >= 2 && h.depth <= maxDepth);
 
-// Check if TOC should be shown - global setting, then hideTOC frontmatter, then showTOC frontmatter (default true for pages)
+// Check if TOC should be shown - global setting, then hideTOC frontmatter.
+// showTOC 는 docs 컬렉션에만 있는 필드라 pages 에서는 항상 undefined 였고,
+// 따라서 늘 true 인 무의미한 항이었다. ProjectLayout/PostLayout 과 동일하게
+// hideTOC 만으로 판단한다.
 const hideTOC = page.data.hideTOC === true;
-const showTOC = page.data.showTOC !== undefined ? page.data.showTOC : true;
-const shouldShowTOC = siteConfig.tableOfContents.enabled && !hideTOC && showTOC && toc.length > 0;
+const shouldShowTOC = siteConfig.tableOfContents.enabled && !hideTOC && toc.length > 0;
 
 // Generate structured data
 const structuredData = {
