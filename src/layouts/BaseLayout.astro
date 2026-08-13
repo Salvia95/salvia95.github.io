@@ -1077,9 +1077,33 @@ const scrollbarClass = siteConfig.hideScrollBar ? '' : 'show-scrollbars';
   <CategoryFilter />
 
 
-    <!-- Mermaid diagrams handled by client script -->
+    <!-- Mermaid diagrams handled by client script.
+         mermaid 번들은 사이트 전체 JS 의 대부분을 차지한다. 예전에는 무조건 import 해서
+         다이어그램이 없는 페이지도 청크를 받았다. 다이어그램이 있을 때만 로드한다. -->
     <script>
-      import('../scripts/mermaid-client.ts');
+      let mermaidModulePromise = null;
+
+      function hasMermaidDiagrams() {
+        return !!document.querySelector('.mermaid-diagram[data-mermaid-source]');
+      }
+
+      // 다이어그램이 있을 때만 실제 번들을 받아온다. 모듈은 import 시점에
+      // 스스로 렌더까지 수행하고, window.initializeMermaid 를 자신의
+      // renderAllDiagrams 로 교체한다(이후 전환은 그쪽이 처리).
+      function ensureMermaid() {
+        if (!hasMermaidDiagrams()) return;
+        if (!mermaidModulePromise) {
+          mermaidModulePromise = import('../scripts/mermaid-client.ts');
+        }
+        return mermaidModulePromise;
+      }
+
+      // Swup 은 전환이 끝나면 window.initializeMermaid() 를 부른다.
+      // 다이어그램 없는 페이지에서 시작해 있는 글로 이동하는 경우를 위해
+      // 이 shim 이 항상 존재해야 한다.
+      window.initializeMermaid = ensureMermaid;
+
+      ensureMermaid();
     </script>
 
   <!-- Global scripts - Defer non-critical JavaScript -->

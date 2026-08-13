@@ -3,6 +3,8 @@
  */
 
 import mermaid from "mermaid";
+import { readThemeColor } from "./graph-theme-colors";
+import { siteConfig, getFontFamily } from "@/config";
 
 // Mermaid configuration
 const mermaidConfig = {
@@ -20,14 +22,121 @@ const diagramCache = new Map<string, { svg: string; theme: string }>();
 // Intersection Observer for lazy loading
 let intersectionObserver: IntersectionObserver | null = null;
 
+/**
+ * 현재 적용된 테마를 식별하는 키.
+ *
+ * 다크모드 여부만으로는 부족하다. 이 블로그는 팔레트 테마가 17종이고
+ * 전환하면 --color-* 변수만 바뀌므로, 팔레트 이름까지 넣어야 캐시가
+ * 올바르게 갈린다. (예전에는 'dark'|'default' 뿐이라 팔레트를 바꿔도
+ * 낡은 SVG 가 그대로 나왔다.)
+ */
+function getThemeKey(): string {
+  const mode = document.documentElement.classList.contains("dark")
+    ? "dark"
+    : "light";
+  const palette =
+    document.documentElement.getAttribute("data-theme") ||
+    document.documentElement.getAttribute("data-theme-config") ||
+    "default";
+  return `${mode}:${palette}`;
+}
+
+/**
+ * 블로그 팔레트를 Mermaid themeVariables 로 변환한다.
+ *
+ * 예전에는 Mermaid 내장 default/dark 테마를 쓰고 그 결과를 global.css 에서
+ * !important 로 덮었다. 증상 억제라 테마가 늘 때마다 규칙이 따라 늘었다.
+ * theme:'base' 는 이 변수들을 기준으로 나머지 색을 파생시키므로,
+ * 팔레트를 직접 주입하면 다이어그램이 본문과 같은 계열로 그려지고
+ * 테마 17종을 자동으로 따라간다.
+ *
+ * 색 방향: 구조(노드·선·텍스트)는 primary, 강조(신호·활성 구간·클러스터)는 highlight.
+ * 팔레트 변수는 다크모드에서 반전되지 않으므로 단계를 각각 지정한다.
+ */
+function buildThemeVariables(): Record<string, string> {
+  const isDark = document.documentElement.classList.contains("dark");
+  const c = (shade: number, fallback: string) =>
+    readThemeColor(`--color-primary-${shade}`, fallback);
+  const a = (shade: number, fallback: string) =>
+    readThemeColor(`--color-highlight-${shade}`, fallback);
+
+  // 라이트/다크에서 서로 다른 단계를 쓴다.
+  const bg = isDark ? c(900, "#21252c") : c(50, "#fafafa");
+  const surface = isDark ? c(800, "#282c34") : c(100, "#eaeaeb");
+  const surfaceAlt = isDark ? c(700, "#3f3f46") : c(200, "#dbdbdc");
+  const border = isDark ? c(500, "#71717a") : c(400, "#8e8e90");
+  const text = isDark ? c(50, "#fafafa") : c(900, "#21252c");
+  const textMuted = isDark ? c(300, "#d8d8d9") : c(600, "#52525b");
+  const accent = isDark ? a(400, "#578af2") : a(600, "#1a92ff");
+  const accentSoft = isDark ? a(900, "#0c4a6e") : a(100, "#cce7ff");
+  const accentBorder = isDark ? a(700, "#0369a1") : a(300, "#66b7ff");
+
+  return {
+    // --- 시드: Mermaid 가 나머지를 파생시키는 기준값 ---
+    darkMode: String(isDark),
+    background: bg,
+    primaryColor: surface,
+    primaryBorderColor: border,
+    primaryTextColor: text,
+    secondaryColor: surfaceAlt,
+    tertiaryColor: bg,
+    lineColor: border,
+    textColor: text,
+
+    // --- 타이포: 본문과 같은 폰트 스택(한글 폴백 포함), 크기는 한 단계 작게 ---
+    fontFamily: getFontFamily(siteConfig.fonts.families.body),
+    fontSize: "14px",
+
+    // --- 플로우차트 / 상태 ---
+    mainBkg: surface,
+    nodeBkg: surface,
+    nodeBorder: border,
+    nodeTextColor: text,
+    clusterBkg: isDark ? c(800, "#282c34") : c(100, "#eaeaeb"),
+    clusterBorder: accentBorder,
+    defaultLinkColor: border,
+    edgeLabelBackground: bg,
+    titleColor: text,
+    transitionColor: border,
+    transitionLabelColor: textMuted,
+    stateLabelColor: text,
+    stateBkg: surface,
+    specialStateColor: accent,
+
+    // --- 시퀀스 ---
+    actorBkg: surface,
+    actorBorder: border,
+    actorTextColor: text,
+    actorLineColor: border,
+    signalColor: accent,
+    signalTextColor: text,
+    activationBkgColor: accentSoft,
+    activationBorderColor: accentBorder,
+    sequenceNumberColor: bg,
+    labelBoxBkgColor: surface,
+    labelBoxBorderColor: border,
+    labelTextColor: text,
+    loopTextColor: text,
+    noteBkgColor: accentSoft,
+    noteBorderColor: accentBorder,
+    noteTextColor: text,
+
+    // --- ER ---
+    attributeBackgroundColorEven: bg,
+    attributeBackgroundColorOdd: surface,
+    relationColor: border,
+    relationLabelBackground: bg,
+    relationLabelColor: text,
+  };
+}
+
 // Initialize Mermaid with current theme
 function initializeMermaid(): void {
-  const isDark = document.documentElement.classList.contains("dark");
-  const theme = isDark ? "dark" : "default";
-
   mermaid.initialize({
     ...mermaidConfig,
-    theme: theme,
+    // 'base' 만이 themeVariables 를 온전히 반영한다.
+    theme: "base",
+    themeVariables: buildThemeVariables(),
   });
 }
 
@@ -62,9 +171,7 @@ async function renderDiagram(diagram: HTMLElement): Promise<void> {
   if (!source) return;
 
   const decodedSource = decodeURIComponent(source);
-  const currentTheme = document.documentElement.classList.contains("dark")
-    ? "dark"
-    : "default";
+  const currentTheme = getThemeKey();
   const cacheKey = `${decodedSource}-${currentTheme}`;
 
   // Check cache first
@@ -141,14 +248,21 @@ async function renderAllDiagrams(): Promise<void> {
   });
 }
 
-// Handle theme changes with caching
+// Handle theme changes with caching.
+// 모드 토글과 팔레트 전환이 짧은 간격으로 겹쳐 들어올 수 있어 한 프레임 debounce 한다.
+let themeChangeTimer: number | undefined;
 function handleThemeChange(): void {
+  if (themeChangeTimer !== undefined) {
+    clearTimeout(themeChangeTimer);
+  }
+  themeChangeTimer = setTimeout(applyThemeChange, 16) as unknown as number;
+}
+
+function applyThemeChange(): void {
   const diagrams = document.querySelectorAll(
     ".mermaid-diagram[data-mermaid-source]"
   );
-  const currentTheme = document.documentElement.classList.contains("dark")
-    ? "dark"
-    : "default";
+  const currentTheme = getThemeKey();
 
   diagrams.forEach((diagram) => {
     const source = diagram.getAttribute("data-mermaid-source");

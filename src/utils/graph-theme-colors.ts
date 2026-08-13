@@ -22,31 +22,41 @@ export interface GraphThemeColors {
 }
 
 /**
+ * Read a theme CSS custom property and return it as a concrete color string.
+ *
+ * BaseLayout 이 팔레트를 "R G B" 삼원색 문자열로 주입하기 때문에
+ * (`root.style.setProperty('--color-primary-500', '113 113 122')`),
+ * 캔버스나 라이브러리 설정처럼 CSS 밖에서 색을 써야 할 때는 hex 로 바꿔줘야 한다.
+ *
+ * 그래프 뷰와 Mermaid 다이어그램이 같은 해석 규칙을 공유하도록 여기서 한 번만 정의한다.
+ */
+export function readThemeColor(varName: string, fallback: string): string {
+  const value = getComputedStyle(document.documentElement)
+    .getPropertyValue(varName)
+    .trim();
+  if (!value) return fallback;
+
+  // Convert RGB format (e.g., "255 255 255") to hex format
+  if (value.includes(' ')) {
+    const rgbValues = value.split(' ').map((v) => parseInt(v.trim()));
+    if (rgbValues.length === 3 && rgbValues.every((v) => !isNaN(v))) {
+      const hex = rgbValues.map((v) => v.toString(16).padStart(2, '0')).join('');
+      return `#${hex}`;
+    }
+  }
+
+  return value;
+}
+
+/**
  * Get theme colors for graph components
  * This function reads CSS custom properties and provides fallbacks
  */
 export function getGraphThemeColors(): GraphThemeColors {
-  const root = document.documentElement;
-  const computedStyle = getComputedStyle(root);
   const isDarkMode = document.documentElement.classList.contains('dark');
-  
-  // Get CSS custom properties with fallbacks
-  const getCSSVar = (varName: string, fallback: string): string => {
-    const value = computedStyle.getPropertyValue(varName).trim();
-    if (!value) return fallback;
-    
-    // Convert RGB format (e.g., "255 255 255") to hex format
-    if (value.includes(' ')) {
-      const rgbValues = value.split(' ').map(v => parseInt(v.trim()));
-      if (rgbValues.length === 3 && rgbValues.every(v => !isNaN(v))) {
-        const hex = rgbValues.map(v => v.toString(16).padStart(2, '0')).join('');
-        return `#${hex}`;
-      }
-    }
-    
-    return value;
-  };
-  
+
+  const getCSSVar = readThemeColor;
+
   // Theme-aware color fallbacks
   const fallbacks = {
     light: {
