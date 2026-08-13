@@ -1,9 +1,10 @@
-import { defineCollection, z } from 'astro:content';
+import { defineCollection } from 'astro:content';
+import { z } from 'astro/zod';
 import { glob } from 'astro/loaders';
 
 // Define schema for blog posts
 const postsCollection = defineCollection({
-  loader: glob({ pattern: '**/*.{md,mdx}', base: './src/content/posts' }),
+  loader: glob({ pattern: '**/*.md', base: './src/content/posts' }),
   schema: z.object({
     title: z.string().default('Untitled Post'),
     description: z.string().nullable().optional().default('No description provided'),
@@ -42,7 +43,7 @@ const postsCollection = defineCollection({
 
 // Define schema for static pages
 const pagesCollection = defineCollection({
-  loader: glob({ pattern: '**/*.{md,mdx}', base: './src/content/pages' }),
+  loader: glob({ pattern: '**/*.md', base: './src/content/pages' }),
   schema: z.object({
     title: z.string().default('Untitled Page'),
     description: z.string().nullable().optional().default('No description provided'),
@@ -73,14 +74,14 @@ const pagesCollection = defineCollection({
 
 // Define schema for projects
 const projectsCollection = defineCollection({
-  loader: glob({ pattern: '**/*.{md,mdx}', base: './src/content/projects' }),
+  loader: glob({ pattern: '**/*.md', base: './src/content/projects' }),
   schema: z.object({
     title: z.string().default('Untitled Project'),
     description: z.string().nullable().optional().default('No description provided'),
     date: z.coerce.date().default(() => new Date()),
     categories: z.array(z.string()).nullable().optional().default([]),
-    repositoryUrl: z.string().url().nullable().optional(),
-    projectUrl: z.string().url().nullable().optional(),
+    repositoryUrl: z.url().nullable().optional(),
+    projectUrl: z.url().nullable().optional(),
     status: z.string().nullable().optional(),
     image: z.any().nullable().optional().transform((val) => {
       // Handle various Obsidian syntax formats
@@ -107,7 +108,7 @@ const projectsCollection = defineCollection({
 
 // Define schema for docs
 const docsCollection = defineCollection({
-  loader: glob({ pattern: '**/*.{md,mdx}', base: './src/content/docs' }),
+  loader: glob({ pattern: '**/*.md', base: './src/content/docs' }),
   schema: z.object({
     title: z.string().default('Untitled Documentation'),
     description: z.string().nullable().optional().default('No description provided'),
@@ -141,7 +142,7 @@ const docsCollection = defineCollection({
 
 // Define schema for special home pages (homepage blurb, 404, projects index, docs index)
 const specialCollection = defineCollection({
-  loader: glob({ pattern: '**/*.{md,mdx}', base: './src/content/special' }),
+  loader: glob({ pattern: '**/*.md', base: './src/content/special' }),
   schema: z.object({
     title: z.string().default('Untitled Page'),
     description: z.string().nullable().optional().default('No description provided'),

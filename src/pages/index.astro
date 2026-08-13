@@ -177,6 +177,7 @@ const structuredData = {
   <div class="py-8 relative">
     <div class="mx-auto px-4 sm:px-6 lg:px-8" style={`max-width: ${siteConfig.layout.contentWidth}`}>
       {onlyBlurbContent ? (
+        <>
         <!-- Blurb-only homepage with page-like layout -->
         <article class="bg-primary-50 dark:bg-primary-900 rounded-lg border border-primary-200 dark:border-primary-700 shadow-sm">
           <div class="p-6 rounded-lg">
@@ -195,6 +196,7 @@ const structuredData = {
             </div>
           </div>
         </article>
+        </>
       ) : processedPosts.length > 0 ? (
         <>
           <!-- Home blurb above posts -->
@@ -334,6 +336,7 @@ const structuredData = {
 
         </>
       ) : (
+        <>
         <!-- Empty state -->
         <section class="text-center py-16">
           <div class="max-w-md mx-auto">
@@ -353,10 +356,11 @@ const structuredData = {
             )}
           </div>
         </section>
+        </>
       )}
 
     </div>
-  </main>
+  </div>
 </BaseLayout>
 
 <script>
@@ -374,12 +378,15 @@ const structuredData = {
 </script>
 
 <style>
+  /* Tailwind v4: 별도 번들되는 <style> 블록은 테마 변수/커스텀 유틸리티에
+     접근할 수 없으므로 @apply 를 쓰려면 메인 CSS 를 참조해야 한다. */
+  @reference "../styles/global.css";
   /* Enhanced homepage styles */
   .btn-primary {
     @apply inline-flex items-center px-6 py-3 font-medium rounded-lg transition-all duration-200 hover:shadow-lg transform hover:scale-105;
   }
 
   .btn-primary:focus-visible {
-    @apply outline-none ring-2 ring-highlight-500 ring-offset-2;
+    @apply outline-hidden ring-2 ring-highlight-500 ring-offset-2;
   }
 </style>

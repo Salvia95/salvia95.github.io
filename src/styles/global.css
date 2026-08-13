@@ -2,9 +2,12 @@
 /* KaTeX Math Rendering - Must be first */
 @import 'katex/dist/katex.css';
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+/* Tailwind v4 는 JS 설정을 자동 탐지하지 않는다. 기존 v3 형식 설정
+   (색상 스케일의 <alpha-value>, typography 오버라이드, darkMode: 'class',
+   커스텀 addUtilities) 을 그대로 쓰기 위해 명시적으로 로드한다. */
+@config "../../tailwind.config.mjs";
 
 /* KaTeX Theme Integration */
 .katex {
@@ -372,7 +375,9 @@ kbd {
 
 /* Button Styles - Consolidated */
 .btn {
-  @apply inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 cursor-pointer border no-underline;
+  /* ring 색상을 명시한다. Tailwind v3 는 기본 ring 색상이 blue-500/50 이었지만
+     v4 는 currentColor 로 바뀌었다. 기존 외형을 유지하려고 값을 고정한다. */
+  @apply inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 focus:outline-hidden focus:ring-2 focus:ring-blue-500/50 focus:ring-offset-2 cursor-pointer border no-underline;
   text-decoration: none !important;
   user-select: none;
   vertical-align: middle;
@@ -436,7 +441,7 @@ input[type="text"],
 input[type="email"],
 input[type="search"],
 textarea {
-  @apply block w-full px-3 py-2 border border-primary-300 dark:border-primary-600 rounded-lg bg-white dark:bg-primary-800 text-primary-900 dark:text-primary-100 placeholder-primary-500 dark:placeholder-primary-400 focus:outline-none focus:ring-2 focus:ring-highlight-500 focus:border-transparent;
+  @apply block w-full px-3 py-2 border border-primary-300 dark:border-primary-600 rounded-lg bg-white dark:bg-primary-800 text-primary-900 dark:text-primary-100 placeholder-primary-500 dark:placeholder-primary-400 focus:outline-hidden focus:ring-2 focus:ring-highlight-500 focus:border-transparent;
 }
   
 .form-sleek {  
@@ -525,7 +530,7 @@ textarea {
 
 .callout-toggle {
   @apply ml-auto p-1 rounded transition-colors duration-200;
-  @apply focus:outline-none focus:ring-0;
+  @apply focus:outline-hidden focus:ring-0;
 }
 
 .callout-toggle-icon {
@@ -823,20 +828,20 @@ textarea {
 
 /* Alternating rows using dynamic theme colors */
 .prose .table-wrapper table tr:nth-child(even) {
-  @apply bg-primary-50 !important;
+  @apply bg-primary-50!;
 }
 
 .dark .prose .table-wrapper table tr:nth-child(even) {
-  @apply bg-primary-800 !important;
+  @apply bg-primary-800!;
 }
 
 /* Hover using dynamic theme colors */
 .prose .table-wrapper table tr:hover {
-  @apply bg-primary-100 !important;
+  @apply bg-primary-100!;
 }
 
 .dark .prose .table-wrapper table tr:hover {
-  @apply bg-primary-700 !important;
+  @apply bg-primary-700!;
 }
 
 @media (min-width: 768px) {
@@ -1133,7 +1138,7 @@ img + p em {
 }
 
 /* Mermaid diagram styling */
-.mermaid-diagram :global(.mermaid) {
+.mermaid-diagram .mermaid {
   @apply text-center;
 }
 
@@ -1172,7 +1177,7 @@ img + p em {
 }
 
 /* Mermaid theme integration */
-.mermaid-diagram :global(.mermaid) {
+.mermaid-diagram .mermaid {
   @apply text-primary-900 dark:text-primary-100;
 }
 
@@ -1242,16 +1247,11 @@ svg[viewBox="0 0 417 625"] {
   overflow: hidden !important;
 }
 
-/* Hide any SVG containing bomb text */
-svg:has(text:contains("Syntax error in text")),
-svg:has(text:contains("mermaid version")) {
-  display: none !important;
-  visibility: hidden !important;
-  opacity: 0 !important;
-  height: 0 !important;
-  width: 0 !important;
-  overflow: hidden !important;
-}
+/* `svg:has(text:contains("..."))` 규칙이 여기 있었으나 제거했다. :contains() 는
+   CSS 셀렉터가 아니라 jQuery 문법이라 어떤 브라우저도 구현하지 않는다. 즉 이
+   규칙은 한 번도 동작한 적이 없고, Vite 8 의 Lightning CSS 는 빌드마다 경고를
+   냈다. mermaid 에러 SVG 는 바로 위 규칙의 aria-roledescription="error" /
+   .error-icon / .error-text 로 이미 잡힌다. */
 
 /* ============================================================================
    OBSIDIAN EMBEDS

@@ -1,5 +1,5 @@
 ---
-import { getCollection } from 'astro:content';
+import { getCollection, type CollectionEntry } from 'astro:content';
 import { siteConfig } from '@/config';
 import { generatePageSEO } from '@/utils/seo';
 import { shouldShowPost, sortPostsByDate, extractTags } from '@/utils/markdown';
@@ -13,9 +13,11 @@ import SeriesCarousel from '@/components/SeriesCarousel.astro';
 import { getTopSeries } from '@/utils/series';
 
 // Get special content for posts page
-let postsPageContent;
+let postsPageContent: CollectionEntry<'special'>[] = [];
 try {
-  postsPageContent = await getCollection('special', ({ slug }) => slug === 'posts');
+  // Content Layer 엔트리에는 slug 가 없다. id 로 걸러야 한다.
+  // (기존 코드는 항상 빈 배열을 돌려줘서 special/posts.md 가 죽어 있었다)
+  postsPageContent = await getCollection('special', ({ id }) => id === 'posts');
 } catch (error) {
   // Fallback if special collection doesn't exist or posts.md doesn't exist
   postsPageContent = [];
@@ -23,9 +25,9 @@ try {
 
 const postsPageData = postsPageContent.length > 0 ? postsPageContent[0] : null;
 
-// Get query parameters
-const url = new URL(Astro.request.url);
-const selectedTag = url.searchParams.get('tag');
+// 태그 필터링은 정적 라우트 /posts/tag/<태그> 가 담당한다. 예전에는 여기서
+// Astro.request.url 의 searchParams 를 읽었지만, 정적 빌드에는 요청이 없어
+// 항상 비어 있었고 ?tag= 링크는 필터 없는 전체 목록으로 갈 뿐이었다.
 
 // Get all posts
 const allPosts = await getCollection('posts');
@@ -41,30 +43,23 @@ const sortedPosts = sortPostsByDate(visiblePosts);
 const seriesCfg = siteConfig.postOptions.seriesCarousel;
 const topSeries = seriesCfg.enabled ? getTopSeries(allPosts, isDev, seriesCfg.count) : [];
 
-// Filter by tag if specified
-const filteredPosts = selectedTag
-  ? sortedPosts.filter(post => post.data.tags?.includes(selectedTag))
-  : sortedPosts;
-
 // Pagination
 const postsPerPage = siteConfig.postOptions.postsPerPage;
-const totalPosts = filteredPosts.length;
+const totalPosts = sortedPosts.length;
 const totalPages = Math.ceil(totalPosts / postsPerPage);
 const currentPage = 1; // This is the first page
 const startIndex = 0;
 const endIndex = Math.min(postsPerPage, totalPosts);
-const paginatedPosts = filteredPosts.slice(startIndex, endIndex);
+const paginatedPosts = sortedPosts.slice(startIndex, endIndex);
 
 // Extract all unique tags
 const allTags = extractTags(sortedPosts);
 
 // Generate SEO data
-const pageTitle = selectedTag
-  ? `Posts tagged "${selectedTag}"`
-  : (postsPageData?.data.title || 'All Posts');
-const pageDescription = selectedTag
-  ? `All posts tagged with "${selectedTag}"`
-  : (postsPageData?.data.description || `Browse all ${totalPosts} posts on ${siteConfig.title}`);
+const pageTitle = postsPageData?.data.title || 'All Posts';
+const pageDescription =
+  postsPageData?.data.description ||
+  `Browse all ${totalPosts} posts on ${siteConfig.title}`;
 
 const seoData = {
   title: `${pageTitle} | ${siteConfig.title}`,
@@ -74,7 +69,7 @@ const seoData = {
 };
 
 // Pagination info
-const baseUrl = selectedTag ? `/posts?tag=${encodeURIComponent(selectedTag)}` : '/posts';
+const baseUrl = '/posts';
 const pagination = {
   currentPage,
   totalPages,
@@ -108,8 +103,8 @@ const pagination = {
 
   <div class="py-8 relative">
     <div class="mx-auto px-4 sm:px-6 lg:px-8 mb-12" style={`max-width: ${siteConfig.layout.contentWidth}`}>
-      <!-- Series carousel (main view only, not while filtering by tag) -->
-      {topSeries.length > 0 && !selectedTag && (
+      <!-- Series carousel -->
+      {topSeries.length > 0 && (
         <SeriesCarousel series={topSeries} intervalMs={seriesCfg.intervalMs} />
       )}
 
@@ -132,29 +127,8 @@ const pagination = {
           </div>
         </div>
         <p class="text-base text-primary-600 dark:text-primary-300">
-          {selectedTag ? (
-            <>
-              <span class="inline-flex items-center px-2 py-1 bg-highlight-100 dark:bg-highlight-900/30 text-highlight-800 dark:text-highlight-200 rounded text-sm font-medium mr-1">
-                #{selectedTag}
-              </span>
-              태그의 글 <strong>{filteredPosts.length}</strong>개
-            </>
-          ) : (
-            <>전체 <strong>{totalPosts}</strong>개의 글</>
-          )}
+          전체 <strong>{totalPosts}</strong>개의 글
         </p>
-
-        {selectedTag && (
-          <div class="mt-4">
-            <a
-              href="/posts"
-              class="inline-flex items-center text-sm text-primary-600 dark:text-primary-300 hover:text-primary-800 dark:hover:text-primary-200 transition-colors"
-            >
-              <Icon name="arrow-left" class="w-4 h-4 mr-1" />
-              Show all posts
-            </a>
-          </div>
-        )}
       </header>
 
       <div class="relative">
@@ -172,19 +146,8 @@ const pagination = {
               <!-- Pagination -->
               <Pagination pagination={pagination} baseUrl={baseUrl} />
             </>
-          ) : selectedTag ? (
-            <!-- No posts for selected tag -->
-            <div class="text-center py-16">
-              <Icon name="tag" class="w-16 h-16 text-primary-400 dark:text-primary-500 mx-auto mb-6" />
-              <h2 class="font-semibold text-primary-900 dark:text-primary-50 mb-4">
-                해당 태그의 글이 없습니다
-              </h2>
-              <p class="text-primary-600 dark:text-primary-300 mb-8 max-w-md mx-auto">
-                "{selectedTag}" 태그가 달린 글이 없습니다. 다른 태그를 둘러보거나
-                <a href="/posts" class="text-primary-600 dark:text-primary-300 hover:underline">전체 글 보기</a>로 이동해 주세요.
-              </p>
-            </div>
           ) : (
+            <>
             <!-- No posts at all -->
             <div class="text-center py-16">
               <Icon name="file-text" class="w-16 h-16 text-primary-400 dark:text-primary-500 mx-auto mb-6" />
@@ -202,6 +165,7 @@ const pagination = {
                 </div>
               )}
             </div>
+            </>
           )}
         </div>
 
@@ -228,6 +192,9 @@ const pagination = {
 </BaseLayout>
 
 <style>
+  /* Tailwind v4: 별도 번들되는 <style> 블록은 테마 변수/커스텀 유틸리티에
+     접근할 수 없으므로 @apply 를 쓰려면 메인 CSS 를 참조해야 한다. */
+  @reference "../../styles/global.css";
   /* Enhanced posts page styles */
   .posts-grid {
     display: grid;

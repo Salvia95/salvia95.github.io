@@ -1,6 +1,6 @@
 ---
-import type { GetStaticPaths } from 'astro';
-import { getCollection } from 'astro:content';
+import type { GetStaticPaths, InferGetStaticPropsType } from 'astro';
+import { getCollection, type CollectionEntry } from 'astro:content';
 import { siteConfig } from '@/config';
 import { generatePageSEO } from '@/utils/seo';
 import { shouldShowPost, sortPostsByDate, extractTags } from '@/utils/markdown';
@@ -10,7 +10,20 @@ import Tags from '@/components/Tags.astro';
 import Pagination from '@/components/Pagination.astro';
 import Icon from '@/components/Icon.astro';
 
-export const getStaticPaths: GetStaticPaths = async () => {
+// interface 가 아니라 type 이어야 한다. GetStaticPathsItem['props'] 는
+// Record<string, any> 를 요구하는데, 인덱스 시그니처가 없는 interface 는
+// 거기에 할당되지 않는다 (type alias 는 암묵적으로 만족한다).
+type PageProps = {
+  posts: CollectionEntry<'posts'>[];
+  currentPage: number;
+  totalPages: number;
+  postsPerPage: number;
+};
+
+// `satisfies` 를 써야 반환 타입이 그대로 보존돼 InferGetStaticPropsType 이
+// 실제 props 를 뽑아낼 수 있다. `: GetStaticPaths` 로 애노테이션하면 반환
+// 타입이 제네릭으로 뭉개져 Astro.props 가 unknown 이 된다.
+export const getStaticPaths = (async () => {
   // Get all posts
   const allPosts = await getCollection('posts');
 
@@ -26,7 +39,10 @@ export const getStaticPaths: GetStaticPaths = async () => {
   const totalPages = Math.ceil(sortedPosts.length / postsPerPage);
 
   // Generate paths for each page (starting from page 2)
-  const paths = [];
+  // paths 에 타입을 달아야 한다. `const paths = []` 는 any[] 로 추론돼
+  // getStaticPaths 의 반환 타입이 무너지고, 그러면 Astro.props 가 unknown 이
+  // 되어 currentPage/totalPages 등이 전부 unknown 으로 번진다.
+  const paths: Array<{ params: { page: string }; props: PageProps }> = [];
   for (let page = 2; page <= totalPages; page++) {
     paths.push({
       params: { page: page.toString() },
@@ -40,41 +56,27 @@ export const getStaticPaths: GetStaticPaths = async () => {
   }
 
   return paths;
-};
+}) satisfies GetStaticPaths;
 
-export interface Props {
-  posts: any[];
-  currentPage: number;
-  totalPages: number;
-  postsPerPage: number;
-}
+export type Props = InferGetStaticPropsType<typeof getStaticPaths>;
 
 const { posts, currentPage, totalPages, postsPerPage } = Astro.props;
 
-// Get query parameters
-const url = new URL(Astro.request.url);
-const selectedTag = url.searchParams.get('tag');
-
-// Filter by tag if specified
-const filteredPosts = selectedTag
-  ? posts.filter(post => post.data.tags?.includes(selectedTag))
-  : posts;
+// 태그 필터링은 정적 라우트 /posts/tag/<태그>/<페이지> 가 담당한다. 예전에는
+// 여기서 Astro.request.url 의 searchParams 를 읽었지만 정적 빌드에는 요청이
+// 없어 항상 비어 있었다.
 
 // Calculate pagination for current page
 const startIndex = (currentPage - 1) * postsPerPage;
-const endIndex = Math.min(startIndex + postsPerPage, filteredPosts.length);
-const paginatedPosts = filteredPosts.slice(startIndex, endIndex);
+const endIndex = Math.min(startIndex + postsPerPage, posts.length);
+const paginatedPosts = posts.slice(startIndex, endIndex);
 
 // Extract all unique tags
 const allTags = extractTags(posts);
 
 // Generate SEO data
-const pageTitle = selectedTag
-  ? `Posts tagged "${selectedTag}" - Page ${currentPage}`
-  : `All Posts - Page ${currentPage}`;
-const pageDescription = selectedTag
-  ? `Page ${currentPage} of posts tagged with "${selectedTag}"`
-  : `Page ${currentPage} of all posts on ${siteConfig.title}`;
+const pageTitle = `All Posts - Page ${currentPage}`;
+const pageDescription = `Page ${currentPage} of all posts on ${siteConfig.title}`;
 
 const seoData = {
   title: `${pageTitle} | ${siteConfig.title}`,
@@ -101,11 +103,7 @@ const pagination = {
       <header class="mb-8">
         <div class="flex items-start justify-between mb-3">
           <h1 class="text-lg font-bold text-primary-900 dark:text-primary-50">
-            {selectedTag ? (
-              <>"{selectedTag}" 태그의 글</>
-            ) : (
-              <>전체 글</>
-            )}
+            전체 글
           </h1>
           <div class="flex items-center space-x-2">
             <a
@@ -120,15 +118,7 @@ const pagination = {
           </div>
         </div>
         <p class="text-base text-primary-600 dark:text-primary-300">
-          {currentPage} / {totalPages} 페이지 • <strong>{filteredPosts.length}</strong>
-          {selectedTag ? (
-            <>개 •
-            <span class="inline-flex items-center px-2 py-1 bg-highlight-100 dark:bg-highlight-900/30 text-highlight-800 dark:text-highlight-200 rounded text-sm font-medium ml-1">
-              #{selectedTag}
-            </span> 태그의 글</>
-          ) : (
-            <>개의 전체 글</>
-          )}
+          {currentPage} / {totalPages} 페이지 • <strong>{posts.length}</strong>개의 전체 글
         </p>
 
         <div class="mt-4">
@@ -158,6 +148,7 @@ const pagination = {
               <Pagination pagination={pagination} baseUrl="/posts" />
             </>
           ) : (
+            <>
             <!-- No posts found -->
             <div class="text-center py-16">
               <Icon name="search-x" class="w-16 h-16 text-primary-400 dark:text-primary-500 mx-auto mb-6" />
@@ -178,6 +169,7 @@ const pagination = {
                 )}
               </div>
             </div>
+            </>
           )}
         </div>
 
@@ -185,7 +177,7 @@ const pagination = {
         <div class="xl:hidden mt-12 space-y-6">
           <!-- Tags -->
           {siteConfig.postOptions.tags && allTags.length > 0 && (
-            <Tags tags={allTags} currentTag={selectedTag} />
+            <Tags tags={allTags} />
           )}
         </div>
 
@@ -194,7 +186,7 @@ const pagination = {
           <div class="sticky top-24 space-y-3 max-h-[calc(100vh-12rem)] overflow-y-auto pb-6">
             <!-- Tags -->
             {siteConfig.postOptions.tags && allTags.length > 0 && (
-              <Tags tags={allTags} currentTag={selectedTag} />
+              <Tags tags={allTags} />
             )}
           </div>
         </div>

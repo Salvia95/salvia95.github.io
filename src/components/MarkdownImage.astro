@@ -6,6 +6,8 @@ interface Props {
   alt?: string;
   title?: string;
   class?: string;
+  /* 캡션은 remark 플러그인이 data-caption 속성으로 넘겨준다. */
+  'data-caption'?: string;
 }
 
 const { src, alt = '', title, class: className } = Astro.props;

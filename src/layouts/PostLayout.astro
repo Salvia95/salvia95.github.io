@@ -62,7 +62,7 @@ const visiblePosts = allPosts.filter(p => shouldShowPost(p, isDev));
 
 // Process the post content and get processed data including word count
 const { Content, headings, wordCount, remarkPluginFrontmatter } = await processPost(post);
-const readingTime = calculateReadingTime(post.body);
+const readingTime = calculateReadingTime(post.body ?? "");
 
 // Generate table of contents if enabled
 const hideTOC = post.data.hideTOC === true;
@@ -202,7 +202,7 @@ if (siteConfig.postOptions.graphView.enabled && siteConfig.postOptions.graphView
             <div class="flex flex-wrap gap-2 mb-8">
               {post.data.tags.map(tag => (
                 <a
-                  href={`/posts?tag=${encodeURIComponent(tag)}`}
+                  href={`/posts/tag/${encodeURIComponent(tag)}`}
                   class="text-xs text-primary-600 dark:text-primary-300 bg-primary-100 dark:bg-primary-800 px-2.5 py-1 rounded-full border border-primary-200 dark:border-primary-700 transition-colors hover:bg-highlight-100 dark:hover:bg-highlight-800"
                 >
                   {tag}
