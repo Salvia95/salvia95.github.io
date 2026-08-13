@@ -15,7 +15,9 @@ import { getTopSeries } from '@/utils/series';
 // Get special content for posts page
 let postsPageContent;
 try {
-  postsPageContent = await getCollection('special', ({ slug }) => slug === 'posts');
+  // Content Layer 엔트리에는 slug 가 없다. id 로 걸러야 한다.
+  // (기존 코드는 항상 빈 배열을 돌려줘서 special/posts.md 가 죽어 있었다)
+  postsPageContent = await getCollection('special', ({ id }) => id === 'posts');
 } catch (error) {
   // Fallback if special collection doesn't exist or posts.md doesn't exist
   postsPageContent = [];

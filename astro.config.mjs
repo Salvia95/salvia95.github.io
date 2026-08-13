@@ -121,6 +121,8 @@ export default defineConfig({
         '@/config': new URL('./src/config.ts', import.meta.url).pathname
       }
     },
+    // server 키가 두 번 선언돼 있어서 뒤엣것이 앞엣것을 통째로 덮어썼다.
+    // hmr / headers / allowedHosts 가 전부 무시되고 있었으므로 하나로 합친다.
     server: {
       host: 'localhost',
       port: 5000,
@@ -129,20 +131,14 @@ export default defineConfig({
       hmr: false,
       headers: {
         'Cache-Control': 'no-cache, no-store, must-revalidate'
-      }
-    },
-    define: {
-      'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development'),
-      'process.env.ASTRO_CONTENT_COLLECTION_CACHE': 'false'
-    },
-    server: {
+      },
       watch: {
         usePolling: process.platform === 'win32', // Use polling on Windows for better file watching
         interval: 1000
       }
     },
-    optimizeDeps: {
-      exclude: ['astro:content']
+    define: {
+      'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'development')
     },
     // Treat these deployment-platform passthrough files as raw static assets so
     // Vite never tries to parse their contents as JavaScript during the build.

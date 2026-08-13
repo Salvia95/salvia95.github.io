@@ -1,4 +1,5 @@
-import { defineCollection, z } from 'astro:content';
+import { defineCollection } from 'astro:content';
+import { z } from 'astro/zod';
 import { glob } from 'astro/loaders';
 
 // Define schema for blog posts
@@ -79,8 +80,8 @@ const projectsCollection = defineCollection({
     description: z.string().nullable().optional().default('No description provided'),
     date: z.coerce.date().default(() => new Date()),
     categories: z.array(z.string()).nullable().optional().default([]),
-    repositoryUrl: z.string().url().nullable().optional(),
-    projectUrl: z.string().url().nullable().optional(),
+    repositoryUrl: z.url().nullable().optional(),
+    projectUrl: z.url().nullable().optional(),
     status: z.string().nullable().optional(),
     image: z.any().nullable().optional().transform((val) => {
       // Handle various Obsidian syntax formats
