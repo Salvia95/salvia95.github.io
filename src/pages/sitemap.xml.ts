@@ -1,6 +1,7 @@
 import type { APIRoute } from "astro";
 import { getCollection } from "astro:content";
 import { siteConfig } from "../config";
+import { getSiteBase } from "../utils/urls";
 import { shouldShowPost, shouldShowContent } from "../utils/markdown";
 
 function shouldExcludeFromSitemap(slug: string): boolean {
@@ -16,7 +17,7 @@ function getSlugFromId(id: string): string {
 }
 
 export const GET: APIRoute = async () => {
-  const siteUrl = import.meta.env.SITE || siteConfig.site;
+  const siteUrl = getSiteBase();
 
   // Get all content collections
   const posts = await getCollection("posts");
@@ -26,8 +27,9 @@ export const GET: APIRoute = async () => {
 
   // Filter posts based on environment
   const isDev = import.meta.env.DEV;
+  // shouldShowPost 로 걸러야 라우트가 생성되지 않는 시리즈 인덱스 글이 빠진다.
   const visiblePosts = posts.filter(
-    (post) => (post as any).data?.draft !== true && !post.data.noIndex
+    (post) => shouldShowPost(post as any, isDev) && !post.data.noIndex
   );
 
   // Filter pages (exclude drafts, special pages, and noIndex)
@@ -65,7 +67,7 @@ export const GET: APIRoute = async () => {
   // Posts index page
   urls.push(`
     <url>
-      <loc>${siteUrl}/posts/</loc>
+      <loc>${siteUrl}posts/</loc>
       <lastmod>${new Date().toISOString()}</lastmod>
       <changefreq>daily</changefreq>
       <priority>0.8</priority>
@@ -76,7 +78,7 @@ export const GET: APIRoute = async () => {
   if (siteConfig.optionalContentTypes.projects) {
     urls.push(`
       <url>
-        <loc>${siteUrl}/projects/</loc>
+        <loc>${siteUrl}projects/</loc>
         <lastmod>${new Date().toISOString()}</lastmod>
         <changefreq>weekly</changefreq>
         <priority>0.7</priority>
@@ -88,7 +90,7 @@ export const GET: APIRoute = async () => {
   if (siteConfig.optionalContentTypes.docs) {
     urls.push(`
       <url>
-        <loc>${siteUrl}/docs/</loc>
+        <loc>${siteUrl}docs/</loc>
         <lastmod>${new Date().toISOString()}</lastmod>
         <changefreq>weekly</changefreq>
         <priority>0.7</priority>

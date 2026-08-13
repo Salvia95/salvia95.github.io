@@ -1,6 +1,7 @@
 import rss from "@astrojs/rss";
 import { getCollection } from "astro:content";
 import { siteConfig } from "../config";
+import { getSiteBase } from "../utils/urls";
 import { shouldShowPost, sortPostsByDate } from "../utils/markdown";
 
 // Helper function to extract image path from Obsidian bracket syntax
@@ -42,14 +43,15 @@ export async function GET() {
   // Get all posts
   const posts = await getCollection("posts");
 
-  // Filter and sort posts based on environment
+  // Filter and sort posts based on environment.
+  // shouldShowPost 를 써야 시리즈 인덱스 글(series: true)이 제외된다. 이 글들은
+  // 캐러셀용 메타데이터라 /posts/<id>/ 라우트가 생성되지 않는데, 예전처럼
+  // draft 만 검사하면 피드에 404 링크가 실린다.
   const isDev = import.meta.env.DEV;
-  const visiblePosts = posts.filter(
-    (post) => (post as any).data?.draft !== true
-  );
+  const visiblePosts = posts.filter((post) => shouldShowPost(post as any, isDev));
   const sortedPosts = sortPostsByDate(visiblePosts);
 
-  const siteUrl = import.meta.env.SITE || siteConfig.site;
+  const siteUrl = getSiteBase();
 
   return rss({
     title: siteConfig.title,
