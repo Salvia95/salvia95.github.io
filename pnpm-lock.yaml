@@ -26,6 +26,9 @@ dependencies:
   '@fortawesome/free-brands-svg-icons':
     specifier: ^7.0.1
     version: 7.1.0
+  '@mermaid-js/layout-elk':
+    specifier: ^0.2.2
+    version: 0.2.2(mermaid@11.12.1)
   '@swup/astro':
     specifier: ^1.0.0
     version: 1.7.0
@@ -2336,6 +2339,16 @@ packages:
     dependencies:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
+    dev: false
+
+  /@mermaid-js/layout-elk@0.2.2(mermaid@11.12.1):
+    resolution: {integrity: sha512-vnH3gtqfhyBiRVKNpT8iDENTw18q/OF0GF/SfYfHN43KZpu+6eZDEOMHTfNYAkpmUWJNgtRQFIS6BTc7vH/DYQ==}
+    peerDependencies:
+      mermaid: ^11.0.2
+    dependencies:
+      d3: 7.9.0
+      elkjs: 0.9.3
+      mermaid: 11.12.1
     dev: false
 
   /@mermaid-js/parser@0.6.3:
@@ -4684,6 +4697,10 @@ packages:
 
   /electron-to-chromium@1.5.241:
     resolution: {integrity: sha512-ILMvKX/ZV5WIJzzdtuHg8xquk2y0BOGlFOxBVwTpbiXqWIH0hamG45ddU4R3PQ0gYu+xgo0vdHXHli9sHIGb4w==}
+    dev: false
+
+  /elkjs@0.9.3:
+    resolution: {integrity: sha512-f/ZeWvW/BCXbhGEf1Ujp29EASo/lk1FDnETgNKwJrsVvGZhUWCZyg3xLJjAsxfOmt8KjswHmI5EwCQcPMpOYhQ==}
     dev: false
 
   /emmet@2.4.11:

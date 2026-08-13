@@ -3,6 +3,7 @@
  */
 
 import mermaid from "mermaid";
+import elkLayouts from "@mermaid-js/layout-elk";
 import { readThemeColor } from "./graph-theme-colors";
 import { siteConfig, getFontFamily } from "@/config";
 
@@ -10,11 +11,36 @@ import { siteConfig, getFontFamily } from "@/config";
 const mermaidConfig = {
   startOnLoad: false,
   securityLevel: "loose" as const,
+  // ELK(elk.layered)를 기본 레이아웃 엔진으로 쓴다. dagre 보다 엣지 교차가 적고
+  // subgraph 중첩을 제대로 다뤄서 노드가 많은 플로우차트가 훨씬 읽을 만해진다.
+  //
+  // 적용 범위: 통합 렌더러를 쓰는 다이어그램(flowchart / class / state /
+  // ER / requirement / mindmap)만. sequence·gantt·pie 등은 자체 렌더러라 무관하다.
+  // 개별 다이어그램에서 끄려면 소스 맨 앞에 프론트매터를 넣는다:
+  //   ---
+  //   config:
+  //     layout: dagre
+  //   ---
+  layout: "elk",
   flowchart: {
     useMaxWidth: true,
     htmlLabels: true,
   },
 };
+
+/**
+ * ELK 레이아웃 로더 등록.
+ *
+ * layout-elk 의 엔트리는 로더 목록만 들고 있고 실제 엔진(elkjs, ~1.5MB)은
+ * 로더가 처음 호출될 때 동적 import 된다. 그래서 등록 자체는 공짜고,
+ * 번들도 별도 청크로 갈린다. mermaid.render 전에 한 번만 부르면 된다.
+ */
+let layoutLoadersRegistered = false;
+function registerLayoutLoaders(): void {
+  if (layoutLoadersRegistered) return;
+  mermaid.registerLayoutLoaders(elkLayouts);
+  layoutLoadersRegistered = true;
+}
 
 // Cache for rendered diagrams to avoid re-rendering on theme changes
 const diagramCache = new Map<string, { svg: string; theme: string }>();
@@ -132,6 +158,7 @@ function buildThemeVariables(): Record<string, string> {
 
 // Initialize Mermaid with current theme
 function initializeMermaid(): void {
+  registerLayoutLoaders();
   mermaid.initialize({
     ...mermaidConfig,
     // 'base' 만이 themeVariables 를 온전히 반영한다.
