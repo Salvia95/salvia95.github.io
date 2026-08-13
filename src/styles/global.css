@@ -1138,7 +1138,7 @@ img + p em {
 }
 
 /* Mermaid diagram styling */
-.mermaid-diagram :global(.mermaid) {
+.mermaid-diagram .mermaid {
   @apply text-center;
 }
 
@@ -1177,7 +1177,7 @@ img + p em {
 }
 
 /* Mermaid theme integration */
-.mermaid-diagram :global(.mermaid) {
+.mermaid-diagram .mermaid {
   @apply text-primary-900 dark:text-primary-100;
 }
 
@@ -1247,16 +1247,11 @@ svg[viewBox="0 0 417 625"] {
   overflow: hidden !important;
 }
 
-/* Hide any SVG containing bomb text */
-svg:has(text:contains("Syntax error in text")),
-svg:has(text:contains("mermaid version")) {
-  display: none !important;
-  visibility: hidden !important;
-  opacity: 0 !important;
-  height: 0 !important;
-  width: 0 !important;
-  overflow: hidden !important;
-}
+/* `svg:has(text:contains("..."))` 규칙이 여기 있었으나 제거했다. :contains() 는
+   CSS 셀렉터가 아니라 jQuery 문법이라 어떤 브라우저도 구현하지 않는다. 즉 이
+   규칙은 한 번도 동작한 적이 없고, Vite 8 의 Lightning CSS 는 빌드마다 경고를
+   냈다. mermaid 에러 SVG 는 바로 위 규칙의 aria-roledescription="error" /
+   .error-icon / .error-text 로 이미 잡힌다. */
 
 /* ============================================================================
    OBSIDIAN EMBEDS

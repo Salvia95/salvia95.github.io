@@ -76,7 +76,7 @@ const seoData = {
 };
 
 // Pagination info
-const baseUrl = selectedTag ? `/posts?tag=${encodeURIComponent(selectedTag)}` : '/posts';
+const baseUrl = selectedTag ? `/posts/tag/${encodeURIComponent(selectedTag)}` : '/posts';
 const pagination = {
   currentPage,
   totalPages,
