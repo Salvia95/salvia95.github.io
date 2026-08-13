@@ -1,4 +1,5 @@
 import { defineConfig } from 'astro/config';
+import { unified } from '@astrojs/markdown-remark';
 import tailwindcss from '@tailwindcss/vite';
 import sitemap from '@astrojs/sitemap';
 import { remarkInternalLinks, remarkFolderImages, remarkImageCaptions } from './src/utils/internallinks.ts';
@@ -18,14 +19,11 @@ import rehypeTableDiagonal from './src/utils/rehype-table-diagonal.ts';
 import { siteConfig } from './src/config.ts';
 import swup from '@swup/astro';
 
-// Deployment platform configuration
-const DEPLOYMENT_PLATFORM = process.env.DEPLOYMENT_PLATFORM || 'netlify';
-
 export default defineConfig({
   site: siteConfig.site,
-  deployment: {
-    platform: DEPLOYMENT_PLATFORM
-  },
+  // Astro 7 은 compressHTML 기본값이 'jsx' 로 바뀌어 인라인 요소 사이 공백을
+  // JSX 규칙으로 제거한다. 기존 출력을 유지하려고 v6 동작('true')으로 고정한다.
+  compressHTML: true,
   devToolbar: {
     enabled: true
   },
@@ -70,40 +68,51 @@ export default defineConfig({
     })
   ],
   markdown: {
-        remarkPlugins: [
-          remarkInternalLinks,
-      remarkFolderImages,
-      remarkObsidianEmbeds,
-      remarkImageCaptions,
-      remarkMath,
-      remarkCallouts,
-      remarkImageGrids,
-      remarkMermaid,
-      [remarkReadingTime, {}],
-      [remarkToc, { 
-        tight: true,
-        ordered: false,
-        maxDepth: 3,
-        heading: 'contents|table[ -]of[ -]contents?|toc'
-      }],
-    ],
-    rehypePlugins: [
-      rehypeKatex,
-      rehypeMark,
-      rehypeTableDiagonal,
-      rehypeOptimizeImages,
-      [rehypeSlug, {
-        test: (node) => node.tagName !== 'h1'
-      }],
-      [rehypeAutolinkHeadings, {
-        behavior: 'wrap',
-        test: (node) => node.tagName !== 'h1',
-        properties: {
-          className: ['anchor-link'],
-          ariaLabel: 'Link to this section'
-        }
-      }]
-    ],
+    // Astro 7 의 기본 Markdown 프로세서는 네이티브 파이프라인(Sätteri)이고
+    // @astrojs/markdown-remark 는 더 이상 기본 설치되지 않는다. 이 저장소는
+    // 커스텀 remark/rehype 플러그인 8개에 의존하므로 unified 파이프라인을
+    // 명시적으로 선택한다. (markdown.remarkPlugins/rehypePlugins 최상위 지정도
+    // 아직 동작하지만 deprecated 라 processor 쪽으로 옮긴다.)
+    //
+    // 실행 순서를 바꾸지 말 것: remarkInternalLinks 가 먼저 돌면서 뒤의
+    // 플러그인들이 변형하는 노드를 만든다.
+    processor: unified({
+      remarkPlugins: [
+        remarkInternalLinks,
+        remarkFolderImages,
+        remarkObsidianEmbeds,
+        remarkImageCaptions,
+        remarkMath,
+        remarkCallouts,
+        remarkImageGrids,
+        remarkMermaid,
+        [remarkReadingTime, {}],
+        [remarkToc, {
+          tight: true,
+          ordered: false,
+          maxDepth: 3,
+          heading: 'contents|table[ -]of[ -]contents?|toc'
+        }],
+      ],
+      rehypePlugins: [
+        rehypeKatex,
+        rehypeMark,
+        rehypeTableDiagonal,
+        rehypeOptimizeImages,
+        [rehypeSlug, {
+          test: (node) => node.tagName !== 'h1'
+        }],
+        [rehypeAutolinkHeadings, {
+          behavior: 'wrap',
+          test: (node) => node.tagName !== 'h1',
+          properties: {
+            className: ['anchor-link'],
+            ariaLabel: 'Link to this section'
+          }
+        }]
+      ],
+    }),
+    // 프로세서에 종속되지 않는 공통 옵션이라 최상위에 그대로 둔다.
     shikiConfig: {
       theme: 'github-dark',
       wrap: true

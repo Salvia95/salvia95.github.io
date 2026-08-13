@@ -158,6 +158,7 @@ const pagination = {
               <Pagination pagination={pagination} baseUrl="/posts" />
             </>
           ) : (
+            <>
             <!-- No posts found -->
             <div class="text-center py-16">
               <Icon name="search-x" class="w-16 h-16 text-primary-400 dark:text-primary-500 mx-auto mb-6" />
@@ -178,6 +179,7 @@ const pagination = {
                 )}
               </div>
             </div>
+            </>
           )}
         </div>
 

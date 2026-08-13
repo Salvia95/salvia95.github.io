@@ -123,8 +123,10 @@ const shouldShowCoverImage = true;
     )}
 
     {!image && (
+      <>
       <!-- Fallback background when no image -->
       <div class="absolute inset-0 bg-gradient-to-br from-primary-200 to-primary-300 dark:from-primary-700 dark:to-primary-800"></div>
+      </>
     )}
 
     <!-- Status badge -->

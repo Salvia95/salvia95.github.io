@@ -176,6 +176,7 @@ const pagination = {
               <Pagination pagination={pagination} baseUrl={baseUrl} />
             </>
           ) : (
+            <>
             <!-- No posts for selected tag -->
             <div class="text-center py-16">
               <Icon name="tag" class="w-16 h-16 text-primary-400 dark:text-primary-500 mx-auto mb-6" />
@@ -187,6 +188,7 @@ const pagination = {
                 <a href="/posts" class="text-primary-600 dark:text-primary-300 hover:underline">view all posts</a>.
               </p>
             </div>
+            </>
           )}
         </div>
 

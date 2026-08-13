@@ -45,11 +45,14 @@ Astro.response.status = 404;
       </h2>
 
       {pageContent ? (
+        <>
         <!-- Custom 404 content -->
         <div class="prose prose-sm dark:prose-dark mx-auto mb-8">
           <pageContent.Content />
         </div>
+        </>
       ) : (
+        <>
         <!-- Default 404 content -->
         <div class="mb-8">
           <p class="text-lg text-primary-600 dark:text-primary-300 mb-4">
@@ -59,6 +62,7 @@ Astro.response.status = 404;
             대신 다른 글들을 둘러보세요!
           </p>
         </div>
+        </>
       )}
     </div>
   </div>

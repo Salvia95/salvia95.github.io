@@ -175,6 +175,7 @@ const pagination = {
               <Pagination pagination={pagination} baseUrl={baseUrl} />
             </>
           ) : selectedTag ? (
+            <>
             <!-- No posts for selected tag -->
             <div class="text-center py-16">
               <Icon name="tag" class="w-16 h-16 text-primary-400 dark:text-primary-500 mx-auto mb-6" />
@@ -186,7 +187,9 @@ const pagination = {
                 <a href="/posts" class="text-primary-600 dark:text-primary-300 hover:underline">전체 글 보기</a>로 이동해 주세요.
               </p>
             </div>
+            </>
           ) : (
+            <>
             <!-- No posts at all -->
             <div class="text-center py-16">
               <Icon name="file-text" class="w-16 h-16 text-primary-400 dark:text-primary-500 mx-auto mb-6" />
@@ -204,6 +207,7 @@ const pagination = {
                 </div>
               )}
             </div>
+            </>
           )}
         </div>
 

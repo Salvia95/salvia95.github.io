@@ -177,6 +177,7 @@ const structuredData = {
   <div class="py-8 relative">
     <div class="mx-auto px-4 sm:px-6 lg:px-8" style={`max-width: ${siteConfig.layout.contentWidth}`}>
       {onlyBlurbContent ? (
+        <>
         <!-- Blurb-only homepage with page-like layout -->
         <article class="bg-primary-50 dark:bg-primary-900 rounded-lg border border-primary-200 dark:border-primary-700 shadow-sm">
           <div class="p-6 rounded-lg">
@@ -195,6 +196,7 @@ const structuredData = {
             </div>
           </div>
         </article>
+        </>
       ) : processedPosts.length > 0 ? (
         <>
           <!-- Home blurb above posts -->
@@ -334,6 +336,7 @@ const structuredData = {
 
         </>
       ) : (
+        <>
         <!-- Empty state -->
         <section class="text-center py-16">
           <div class="max-w-md mx-auto">
@@ -353,10 +356,11 @@ const structuredData = {
             )}
           </div>
         </section>
+        </>
       )}
 
     </div>
-  </main>
+  </div>
 </BaseLayout>
 
 <script>
