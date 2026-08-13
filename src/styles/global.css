@@ -1176,10 +1176,19 @@ img + p em {
   @apply text-primary-600 dark:text-primary-400;
 }
 
-/* Mermaid theme integration */
-.mermaid-diagram .mermaid {
-  @apply text-primary-900 dark:text-primary-100;
-}
+/* 다이어그램 글자색은 CSS 가 아니라 렌더 시점의 themeVariables 가 소유한다.
+   (src/utils/mermaid.ts 의 buildThemeVariables — textColor/primaryTextColor/
+   nodeTextColor 등)
+
+   여기 있던 `@apply text-primary-900 dark:text-primary-100` 은 색 강제 규칙을
+   themeVariables 로 옮긴 커밋에서 미처 지워지지 않은 잔재였다. :global() 로
+   감싸여 있어 셀렉터가 무효였던 탓에 아무도 눈치채지 못했고, :global() 을
+   걷어내자 비로소 적용되면서 문제가 드러났다.
+
+   실제로 어긋난다: 다크 모드에서 buildThemeVariables 는 primary-50(#fafafa)을
+   쓰는데 이 규칙은 primary-100(#eaeaeb)이라 한 단계 흐렸다. 게다가 컨테이너에
+   color 를 걸면 mermaid 가 textColor 와 textMuted 로 구분해둔 라벨들이 한 색으로
+   눌릴 수 있다. 색을 바꾸려면 buildThemeVariables 를 고칠 것. */
 
 /* Mermaid diagram responsive design */
 @media (max-width: 768px) {
