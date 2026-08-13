@@ -1,5 +1,5 @@
 import { defineConfig } from 'astro/config';
-import tailwind from '@astrojs/tailwind';
+import tailwindcss from '@tailwindcss/vite';
 import sitemap from '@astrojs/sitemap';
 import { remarkInternalLinks, remarkFolderImages, remarkImageCaptions } from './src/utils/internallinks.ts';
 import remarkCallouts from './src/utils/remark-callouts.ts';
@@ -47,7 +47,6 @@ export default defineConfig({
     }]
   },
   integrations: [
-    tailwind(),
     sitemap(),
     swup({
       theme: false,
@@ -111,6 +110,7 @@ export default defineConfig({
     }
   },
   vite: {
+    plugins: [tailwindcss()],
     resolve: {
       alias: {
         '@': new URL('./src', import.meta.url).pathname,

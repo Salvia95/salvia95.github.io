@@ -24,7 +24,8 @@ const {
 } = Astro.props;
 
 // Base button classes
-const baseClasses = 'btn inline-flex items-center justify-center font-medium rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-background cursor-pointer border no-underline';
+// ring 색상 명시: v3 기본값(blue-500/50)이 v4 에서 currentColor 로 바뀌었다.
+const baseClasses = 'btn inline-flex items-center justify-center font-medium rounded-lg transition-all duration-200 focus:outline-hidden focus:ring-2 focus:ring-blue-500/50 focus:ring-offset-2 focus:ring-offset-background cursor-pointer border no-underline';
 
 // Size variations
 const sizeClasses = {

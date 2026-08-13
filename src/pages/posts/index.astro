@@ -228,6 +228,9 @@ const pagination = {
 </BaseLayout>
 
 <style>
+  /* Tailwind v4: 별도 번들되는 <style> 블록은 테마 변수/커스텀 유틸리티에
+     접근할 수 없으므로 @apply 를 쓰려면 메인 CSS 를 참조해야 한다. */
+  @reference "../../styles/global.css";
   /* Enhanced posts page styles */
   .posts-grid {
     display: grid;
