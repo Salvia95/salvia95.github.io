@@ -11,22 +11,60 @@ import { siteConfig, getFontFamily } from "@/config";
 const mermaidConfig = {
   startOnLoad: false,
   securityLevel: "loose" as const,
-  // ELK(elk.layered)를 기본 레이아웃 엔진으로 쓴다. dagre 보다 엣지 교차가 적고
-  // subgraph 중첩을 제대로 다뤄서 노드가 많은 플로우차트가 훨씬 읽을 만해진다.
-  //
-  // 적용 범위: 통합 렌더러를 쓰는 다이어그램(flowchart / class / state /
-  // ER / requirement / mindmap)만. sequence·gantt·pie 등은 자체 렌더러라 무관하다.
-  // 개별 다이어그램에서 끄려면 소스 맨 앞에 프론트매터를 넣는다:
-  //   ---
-  //   config:
-  //     layout: dagre
-  //   ---
-  layout: "elk",
   flowchart: {
     useMaxWidth: true,
     htmlLabels: true,
   },
 };
+
+/**
+ * ELK(elk.layered). dagre 보다 엣지 교차가 적고 subgraph 중첩을 제대로 다뤄서
+ * 노드가 많은 플로우차트가 훨씬 읽을 만해진다.
+ *
+ * 적용 범위는 통합 렌더러를 쓰는 다이어그램(flowchart / class / state /
+ * ER / requirement)이다. sequence·gantt·pie 등은 자체 렌더러라 무관하다.
+ */
+const DEFAULT_LAYOUT = "elk";
+
+/**
+ * 마인드맵 전용 레이아웃. mermaid 가 기본 등록하는 force-directed 알고리즘으로,
+ * 마인드맵 특유의 방사형 배치를 만드는 건 이것뿐이다
+ * (dagre 와 elk 는 둘 다 계층형이라 서로 바꿔도 방사형이 되지 않는다).
+ */
+const MINDMAP_LAYOUT = "cose-bilkent";
+
+/**
+ * 소스에서 다이어그램 종류를 읽는다.
+ *
+ * 프론트매터(--- ... ---)와 %% 지시자·주석을 걷어낸 첫 줄의 첫 토큰이
+ * 다이어그램 키워드다. ("mindmap", "flowchart", "sequenceDiagram" ...)
+ */
+function readDiagramType(source: string): string {
+  const body = source.replace(/^\s*---\r?\n[\s\S]*?\r?\n---[ \t]*\r?\n/, "");
+  for (const line of body.split(/\r?\n/)) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("%%")) continue;
+    return trimmed.split(/[\s:{]/)[0];
+  }
+  return "";
+}
+
+/**
+ * 마인드맵만 방사형을 유지한다.
+ *
+ * mermaid 의 마인드맵은 "사용자가 layout 을 지정하지 않았을 때만" 스스로
+ * cose-bilkent 로 갈아탄다 (mindmap 의 getData 안 hasUserDefinedLayout 분기).
+ * 그래서 전역에 layout:'elk' 를 걸면 그 분기가 죽어 계층형으로 그려졌다.
+ * 종류별로 갈라서 초기화해 원래 배치를 되돌린다.
+ *
+ * 작성자가 소스 프론트매터에 layout 을 직접 쓴 경우에는 지시자가 나중에
+ * 적용되므로 그쪽이 이긴다.
+ */
+function layoutFor(source: string): string {
+  return readDiagramType(source) === "mindmap"
+    ? MINDMAP_LAYOUT
+    : DEFAULT_LAYOUT;
+}
 
 /**
  * ELK 레이아웃 로더 등록.
@@ -251,14 +289,35 @@ function buildThemeVariables(): Record<string, string> {
 }
 
 // Initialize Mermaid with current theme
-function initializeMermaid(): void {
+function initializeMermaid(layout: string = DEFAULT_LAYOUT): void {
   registerLayoutLoaders();
   mermaid.initialize({
     ...mermaidConfig,
+    layout,
     // 'base' 만이 themeVariables 를 온전히 반영한다.
     theme: "base",
     themeVariables: buildThemeVariables(),
   });
+}
+
+/**
+ * 렌더 직렬화.
+ *
+ * mermaid.initialize 는 전역 설정을 갈아끼우고, mermaid.render 는 그 설정을
+ * 렌더 도중에 여러 번 읽는다. 다이어그램마다 layout 이 달라진 뒤로는
+ * (마인드맵만 cose-bilkent) 동시에 렌더하면 A 의 초기화가 B 의 렌더 중간에
+ * 끼어들어 엉뚱한 레이아웃으로 그려질 수 있다. IntersectionObserver 는 여러
+ * 다이어그램을 한 번에 흘려보내므로 실제로 일어날 수 있는 일이다.
+ *
+ * 한 번에 하나씩만 그리도록 프로미스 체인으로 묶는다. 렌더는 뷰포트에 들어올
+ * 때만 일어나고 결과는 캐시되므로 직렬화 비용은 눈에 띄지 않는다.
+ */
+let renderChain: Promise<unknown> = Promise.resolve();
+function queueRender<T>(task: () => Promise<T>): Promise<T> {
+  // 앞 작업의 성공/실패와 무관하게 다음 작업을 이어간다.
+  const result = renderChain.then(task, task);
+  renderChain = result.catch(() => undefined);
+  return result;
 }
 
 // Create intersection observer for lazy loading
@@ -319,13 +378,16 @@ async function renderDiagram(diagram: HTMLElement): Promise<void> {
   }
 
   try {
-    // Initialize Mermaid with current theme
-    initializeMermaid();
+    // 초기화(전역 설정 교체)와 렌더는 한 덩어리로 묶어야 한다. 둘 사이에
+    // 다른 다이어그램의 초기화가 끼어들면 layout 이 뒤바뀐다.
+    const { svg } = await queueRender(() => {
+      initializeMermaid(layoutFor(decodedSource));
 
-    const diagramId = `mermaid-${Date.now()}-${Math.random()
-      .toString(36)
-      .substr(2, 9)}`;
-    const { svg } = await mermaid.render(diagramId, decodedSource);
+      const diagramId = `mermaid-${Date.now()}-${Math.random()
+        .toString(36)
+        .substr(2, 9)}`;
+      return mermaid.render(diagramId, decodedSource);
+    });
 
     // Cache the rendered diagram
     diagramCache.set(cacheKey, { svg, theme: currentTheme });
@@ -360,8 +422,8 @@ async function renderAllDiagrams(): Promise<void> {
     return;
   }
 
-  // Initialize Mermaid
-  initializeMermaid();
+  // 여기서 미리 초기화하지 않는다. layout 이 다이어그램마다 다르므로
+  // 설정은 renderDiagram 이 렌더 직전에 (직렬화된 구간 안에서) 잡는다.
 
   // Set up intersection observer for lazy loading
   const observer = createIntersectionObserver();
