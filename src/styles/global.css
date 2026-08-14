@@ -1163,18 +1163,16 @@ a:focus-visible, button:focus-visible, .btn:focus-visible {
 }
 
 /* Mermaid Diagram Styles */
-/* overflow 는 안쪽 content 가 맡는다. 확대 버튼이 여기에 absolute 로 붙는데,
-   스크롤 컨테이너 안에 두면 가로 스크롤을 따라 같이 밀려나기 때문이다. */
+/* `relative` 는 확대 버튼(.mermaid-zoom-trigger)이 붙을 기준점이다.
+   다이어그램은 mermaid 의 useMaxWidth 로 본문 폭에 맞춰 축소된다 —
+   기본 상태에서 전체 모양이 한눈에 보이는 쪽을 택했고, 자세히 볼 때는
+   확대 보기를 쓴다. */
 .mermaid-diagram {
-  @apply my-6 mx-auto max-w-full relative;
+  @apply my-6 mx-auto max-w-full overflow-hidden relative;
 }
 
-/* 본문 폭보다 넓은 다이어그램은 축소하지 않고 가로로 스크롤한다.
-   (실제 폭 결정은 src/utils/mermaid.ts 의 fitToContainer) */
 .mermaid-diagram-content {
   @apply relative;
-  overflow-x: auto;
-  overflow-y: hidden;
 }
 
 .mermaid-diagram-source {
