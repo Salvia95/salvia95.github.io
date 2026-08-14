@@ -111,6 +111,53 @@ function getThemeKey(): string {
   return `${mode}:${palette}`;
 }
 
+/** mermaid 의 THEME_COLOR_LIMIT. cScale0..11 이 이 개수만큼 생성된다. */
+const THEME_COLOR_LIMIT = 12;
+
+/**
+ * 마인드맵 전용 색.
+ *
+ * 마인드맵만 다른 변수 계열을 쓴다 — 노드는 cScale*, 글자는 cScaleLabel*,
+ * 밑줄은 cScaleInv*, 루트 노드는 git0/gitBranchLabel0. 아래를 지정하지 않으면
+ * mermaid 가 primaryColor 의 색상환을 30도씩 돌려 12색을 만들어내서 블로그
+ * 팔레트와 무관한 색이 나온다. 다른 다이어그램은 이 계열을 쓰지 않으므로
+ * (mindmap / timeline / kanban / treemap / radar 만 소비, 그중 이 블로그에
+ * 있는 건 마인드맵뿐) 여기서 고정해도 flowchart·sequence·ER 은 그대로다.
+ *
+ * mermaid 의 Theme.calculate 는 [오버라이드 적용 → 파생 계산 → 오버라이드
+ * 재적용] 순서라, 여기서 준 값은 darken/lighten 가공을 거치지 않고 그대로
+ * 쓰인다. 덕분에 darkMode 플래그를 건드리지 않고 마인드맵만 바꿀 수 있다
+ * (그 플래그는 ER 의 행 색 rowOdd/rowEven 에도 영향을 준다).
+ *
+ * 색 선택: 노드 채움색이 노드 사이 연결선(.section-edge-N) 색도 겸하므로,
+ * 본문 배경 위에서 선으로도 보이는 중간 톤이어야 한다. 그래서 surface 처럼
+ * 옅은 단계는 못 쓰고, 라이트/다크에서 각각 반대 방향으로 잡는다.
+ */
+function buildMindmapScale(
+  isDark: boolean,
+  c: (shade: number, fallback: string) => string,
+  a: (shade: number, fallback: string) => string
+): Record<string, string> {
+  // 중립 ↔ 강조를 번갈아 써서 가지를 구분하되 팔레트 두 계열 안에 머문다.
+  const fills = isDark
+    ? [c(500, "#71717a"), a(400, "#578af2")]
+    : [c(600, "#52525b"), a(700, "#0369a1")];
+  // 라이트는 어두운 채움색 위 밝은 글자, 다크는 그 반대.
+  const label = isDark ? c(900, "#21252c") : c(50, "#fafafa");
+  const rootFill = isDark ? c(300, "#d8d8d9") : c(800, "#282c34");
+
+  const scale: Record<string, string> = {
+    git0: rootFill,
+    gitBranchLabel0: label,
+  };
+  for (let i = 0; i < THEME_COLOR_LIMIT; i++) {
+    scale[`cScale${i}`] = fills[i % fills.length];
+    scale[`cScaleLabel${i}`] = label;
+    scale[`cScaleInv${i}`] = label;
+  }
+  return scale;
+}
+
 /**
  * 블로그 팔레트를 Mermaid themeVariables 로 변환한다.
  *
@@ -197,6 +244,9 @@ function buildThemeVariables(): Record<string, string> {
     relationColor: border,
     relationLabelBackground: bg,
     relationLabelColor: text,
+
+    // --- 마인드맵 (cScale* / git*) ---
+    ...buildMindmapScale(isDark, c, a),
   };
 }
 
