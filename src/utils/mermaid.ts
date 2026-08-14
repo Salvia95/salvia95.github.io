@@ -45,6 +45,77 @@ function registerLayoutLoaders(): void {
 // Cache for rendered diagrams to avoid re-rendering on theme changes
 const diagramCache = new Map<string, { svg: string; theme: string }>();
 
+/**
+ * 렌더된 SVG 를 넣은 뒤 항상 거쳐야 하는 후처리.
+ *
+ * 캐시 적중 경로와 새로 그리는 경로 양쪽에서 불러야 한다. 테마를 바꾸면
+ * SVG 문자열이 통째로 다시 꽂히므로 인라인 스타일도 같이 초기화된다.
+ */
+function enhanceDiagram(diagram: HTMLElement): void {
+  const content = diagram.querySelector<HTMLElement>(".mermaid-diagram-content");
+  const svg = content?.querySelector<SVGSVGElement>("svg");
+  // 렌더 실패 시 content 에는 에러 박스만 있다 — 조용히 건너뛴다.
+  if (!content || !svg) return;
+
+  fitToContainer(content, svg);
+  ensureZoomTrigger(diagram);
+}
+
+/**
+ * 본문 폭보다 넓은 다이어그램을 원래 크기로 되돌리고 컨테이너가 가로 스크롤하게 한다.
+ *
+ * mermaid 는 useMaxWidth(기본 true)일 때 svg 에 width="100%" 와
+ * style="max-width:<자연폭>px" 를 건다. 그래서 넓은 다이어그램은 본문 칼럼
+ * 폭까지 *축소*되고 글자가 읽기 힘들어진다. 컨테이너에 들어가는 다이어그램은
+ * 손대지 않으므로 기존에 잘 보이던 것들의 모양은 그대로다.
+ */
+function fitToContainer(content: HTMLElement, svg: SVGSVGElement): void {
+  const natural = Number.parseFloat(svg.style.maxWidth);
+  if (!Number.isFinite(natural) || natural <= 0) return;
+
+  // 리사이즈 때 다시 판단하려면 원래 폭을 기억해둬야 한다
+  // (max-width 를 none 으로 덮고 나면 읽을 수 없다).
+  svg.dataset.naturalWidth = String(natural);
+  applyWidth(content, svg, natural);
+}
+
+function applyWidth(
+  content: HTMLElement,
+  svg: SVGSVGElement,
+  natural: number
+): void {
+  if (natural > content.clientWidth) {
+    svg.style.maxWidth = "none";
+    svg.style.width = `${natural}px`;
+  } else {
+    svg.style.maxWidth = `${natural}px`;
+    svg.style.width = "100%";
+  }
+}
+
+/** 다이어그램 우상단에 전체화면 확대 버튼을 붙인다. 컨테이너당 한 번만. */
+function ensureZoomTrigger(diagram: HTMLElement): void {
+  if (diagram.querySelector(".mermaid-zoom-trigger")) return;
+
+  const trigger = document.createElement("button");
+  trigger.type = "button";
+  trigger.className = "mermaid-zoom-trigger";
+  trigger.setAttribute("aria-label", "다이어그램 확대해서 보기");
+  trigger.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>`;
+
+  trigger.addEventListener("click", async () => {
+    // 테마를 바꾸면 SVG 노드가 교체되므로 누르는 시점에 다시 찾는다.
+    const svg = diagram.querySelector<SVGSVGElement>(
+      ".mermaid-diagram-content svg"
+    );
+    if (!svg) return;
+    const { openMermaidZoom } = await import("../scripts/mermaid-zoom");
+    openMermaidZoom(svg);
+  });
+
+  diagram.appendChild(trigger);
+}
+
 // Intersection Observer for lazy loading
 let intersectionObserver: IntersectionObserver | null = null;
 
@@ -207,6 +278,7 @@ async function renderDiagram(diagram: HTMLElement): Promise<void> {
     const contentDiv = diagram.querySelector(".mermaid-diagram-content");
     if (contentDiv) {
       contentDiv.innerHTML = cached.svg;
+      enhanceDiagram(diagram);
     }
     return;
   }
@@ -238,6 +310,7 @@ async function renderDiagram(diagram: HTMLElement): Promise<void> {
     // Insert the rendered SVG
     if (contentDiv) {
       contentDiv.innerHTML = svg;
+      enhanceDiagram(diagram);
     }
   } catch (error) {
     if (contentDiv) {
@@ -304,11 +377,33 @@ function applyThemeChange(): void {
       const contentDiv = diagram.querySelector(".mermaid-diagram-content");
       if (contentDiv) {
         contentDiv.innerHTML = cached.svg;
+        enhanceDiagram(diagram as HTMLElement);
       }
     } else {
       // Re-render if no cache available
       renderDiagram(diagram as HTMLElement);
     }
+  });
+}
+
+// 창 크기가 바뀌면 "본문에 들어가는가" 판정이 뒤집힐 수 있다(모바일 회전 등).
+// 자연 폭은 dataset 에 남겨뒀으므로 다시 그릴 필요 없이 폭만 재계산한다.
+let resizeTimer: number | undefined;
+function refitAllDiagrams(): void {
+  document
+    .querySelectorAll<HTMLElement>(".mermaid-diagram .mermaid-diagram-content")
+    .forEach((content) => {
+      const svg = content.querySelector<SVGSVGElement>("svg");
+      const natural = Number(svg?.dataset.naturalWidth);
+      if (!svg || !Number.isFinite(natural) || natural <= 0) return;
+      applyWidth(content, svg, natural);
+    });
+}
+
+if (typeof window !== "undefined") {
+  window.addEventListener("resize", () => {
+    if (resizeTimer !== undefined) clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(refitAllDiagrams, 150) as unknown as number;
   });
 }
 

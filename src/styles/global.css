@@ -1163,12 +1163,18 @@ a:focus-visible, button:focus-visible, .btn:focus-visible {
 }
 
 /* Mermaid Diagram Styles */
+/* overflow 는 안쪽 content 가 맡는다. 확대 버튼이 여기에 absolute 로 붙는데,
+   스크롤 컨테이너 안에 두면 가로 스크롤을 따라 같이 밀려나기 때문이다. */
 .mermaid-diagram {
-  @apply my-6 mx-auto max-w-full overflow-hidden;
+  @apply my-6 mx-auto max-w-full relative;
 }
 
+/* 본문 폭보다 넓은 다이어그램은 축소하지 않고 가로로 스크롤한다.
+   (실제 폭 결정은 src/utils/mermaid.ts 의 fitToContainer) */
 .mermaid-diagram-content {
   @apply relative;
+  overflow-x: auto;
+  overflow-y: hidden;
 }
 
 .mermaid-diagram-source {
@@ -1243,6 +1249,106 @@ a:focus-visible, button:focus-visible, .btn:focus-visible {
 /* Mermaid diagram in prose */
 .prose .mermaid-diagram {
   @apply my-6;
+}
+
+/* --- 확대 보기 -------------------------------------------------------------
+   mermaid 에는 확대 기능이 없어서 직접 붙였다. 동작은
+   src/scripts/mermaid-zoom.ts (확대 버튼을 처음 누를 때 동적 로드).
+
+   아래 규칙은 전부 클래스 기반(명시도 0,1,0 이상)이라 @layer 밖이 맞다.
+   docs/astro-7-migration-followups.md 의 Tailwind v4 레이어 규칙 참고. */
+
+/* 배경에 불투명도 수식어(`/90`)를 쓰지 않는다. 이 저장소의 색 스케일은
+   `rgb(var(--color-*) / <alpha-value>)` 형태라 수식어가 붙으면
+   `rgb(rgb(...))` 로 이중 포장된 무효 선언이 함께 나온다. 지금은 뒤따르는
+   oklab 선언이 이겨서 화면상 결과는 맞지만, "무효 선언이 버려진다"에
+   기대는 셈이라 불투명 색으로 간다. */
+.mermaid-zoom-trigger {
+  @apply absolute top-2 right-2 z-10 p-2 rounded-lg cursor-pointer;
+  @apply bg-primary-100 dark:bg-primary-800;
+  @apply text-primary-600 dark:text-primary-300;
+  @apply border border-primary-200 dark:border-primary-700;
+  @apply opacity-0 transition-opacity duration-200;
+}
+
+/* `.mermaid-diagram svg` 가 아이콘까지 w-full 로 늘리지 않도록 한 단계 더 좁게. */
+.mermaid-diagram .mermaid-zoom-trigger svg {
+  @apply w-4 h-4;
+  max-width: none;
+}
+
+.mermaid-diagram:hover .mermaid-zoom-trigger,
+.mermaid-zoom-trigger:focus-visible {
+  @apply opacity-100;
+}
+
+.mermaid-zoom-trigger:hover {
+  @apply bg-primary-200 dark:bg-primary-700;
+}
+
+/* 호버가 없는 기기(터치)에서는 상시 노출 — 아니면 발견할 방법이 없다. */
+@media (hover: none) {
+  .mermaid-zoom-trigger {
+    @apply opacity-100;
+  }
+}
+
+.mermaid-zoom-overlay {
+  @apply fixed inset-0 hidden;
+  z-index: 999999;
+  background: rgb(0 0 0 / 0.85);
+  backdrop-filter: blur(4px);
+}
+
+.mermaid-zoom-overlay.is-open {
+  @apply block;
+}
+
+.mermaid-zoom-stage {
+  @apply absolute inset-0 overflow-hidden;
+  cursor: grab;
+  /* d3-zoom 의 터치 제스처가 브라우저 스크롤에 먹히지 않게 한다. */
+  touch-action: none;
+}
+
+.mermaid-zoom-stage:active {
+  cursor: grabbing;
+}
+
+/* 확대/이동은 이 래퍼의 transform 으로만 표현한다. SVG 내부(viewBox 등)는
+   건드리지 않으므로 foreignObject 라벨이 그대로 살아있다.
+   여백을 주지 않는 이유: mermaid 가 이미 viewBox 에 padding 을 넣어두고,
+   여기서 더하면 초기 fit 계산과 실제 크기가 어긋난다. */
+.mermaid-zoom-wrapper {
+  @apply absolute top-0 left-0 rounded-xl;
+  @apply bg-primary-50 dark:bg-primary-900;
+  transform-origin: 0 0;
+  will-change: transform;
+}
+
+.mermaid-zoom-toolbar {
+  @apply absolute top-4 right-4 flex items-center gap-1 p-1 rounded-full;
+  @apply bg-primary-100 dark:bg-primary-800;
+  @apply border border-primary-200 dark:border-primary-700;
+}
+
+.mermaid-zoom-button {
+  @apply flex items-center justify-center rounded-full cursor-pointer;
+  @apply text-primary-600 dark:text-primary-300;
+  min-width: 2rem;
+  height: 2rem;
+}
+
+.mermaid-zoom-button:hover {
+  @apply bg-primary-200 dark:bg-primary-700;
+}
+
+.mermaid-zoom-button svg {
+  @apply w-4 h-4;
+}
+
+.mermaid-zoom-scale {
+  @apply px-2 text-xs tabular-nums;
 }
 
 /* 색 강제 규칙(!important 9개)은 제거했다.

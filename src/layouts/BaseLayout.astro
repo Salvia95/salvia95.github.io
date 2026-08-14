@@ -1327,6 +1327,10 @@ const scrollbarClass = siteConfig.hideScrollBar ? '' : 'show-scrollbars';
           if (window.lightboxInstance && window.lightboxInstance.isOpen) {
             window.lightboxInstance.closeLightbox();
           }
+          // Mermaid 확대 오버레이도 같이 닫는다. 이 훅은 body 스크롤 잠금을
+          // 되돌리는 유일한 지점이기도 하다. 확대를 한 번도 열지 않았으면
+          // 모듈 자체가 로드되지 않았으므로 옵셔널로 부른다.
+          window.closeMermaidZoom?.();
           // Reinitialize favicon after page transition
           setFavicon();
           // Initialize table wrappers after content replacement
